@@ -1,0 +1,15 @@
+{
+  "name": "pack-unpack",
+  "version": "1.0.0",
+  "description": "Pure javascript implementation of Indy Pack and Unpack",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "author": "Daniel Bluhm <daniel.bluhm@sovrin.org>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "libsodium": "^0.7.3",
+    "libsodium-wrappers": "^0.7.3"
+  }
+}
