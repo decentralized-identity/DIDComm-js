@@ -36,14 +36,6 @@ exports.setup = (async() => {
         );
     }
 
-    function create_keypair(seed = null) {
-        if (!seed) {
-            seed = sodium.randombytes_buf(sodium.crypto_secretbox_KEYBYTES);
-        }
-        res = sodium.crypto_box_seed_keypair(seed);
-        return [res.publicKey, res.privateKey];
-    }
-
     function prepare_recipient_keys(to_keys, from_keys = null) {
         cek = sodium.crypto_secretstream_xchacha20poly1305_keygen();
         recips = [];
@@ -53,14 +45,18 @@ exports.setup = (async() => {
             let enc_sender = null;
             let nonce = null;
 
+            let target_pk = sodium.crypto_sign_ed25519_pk_to_curve25519(target_vk);
+
             if (from_keys) {
                 let sender_vk = Base58.encode(from_keys.publicKey);
-                enc_sender = sodium.crypto_box_seal(sender_vk, target_vk);
+                let sender_pk = sodium.crypto_sign_ed25519_pk_to_curve25519(from_keys.publicKey);
+                let sender_sk = sodium.crypto_sign_ed25519_sk_to_curve25519(from_keys.privateKey);
+                enc_sender = sodium.crypto_box_seal(sender_vk, target_pk);
 
                 nonce = sodium.randombytes_buf(sodium.crypto_box_NONCEBYTES);
-                enc_cek = sodium.crypto_box_easy(cek, nonce, target_vk, from_keys.privateKey);
+                enc_cek = sodium.crypto_box_easy(cek, nonce, target_pk, sender_sk);
             } else {
-                enc_cek = sodium.crypto_box_seal(cek, target_vk);
+                enc_cek = sodium.crypto_box_seal(cek, target_pk);
             }
 
             recips.push(
@@ -84,49 +80,7 @@ exports.setup = (async() => {
         return [JSON.stringify(data), cek]
     }
 
-    // def locate_recipient_key(recipients: Sequence[dict], find_key: Callable) \
-    //         -> (bytes, str, str):
-    //     """
-    //     Decode the encryption key and sender verification key from a
-    //     corresponding recipient block, if any is defined
-    //     """
-    //     not_found = []
-    //     for recip in recipients:
-    //         if not recip or "header" not in recip or "encrypted_key" not in recip:
-    //             raise ValueError("Invalid recipient header")
-    //
-    //         recip_vk_b58 = recip["header"].get("kid")
-    //         secret = find_key(recip_vk_b58)
-    //         if secret is None:
-    //             not_found.append(recip_vk_b58)
-    //             continue
-    //         recip_vk = b58_to_bytes(recip_vk_b58)
-    //         pk = pysodium.crypto_sign_pk_to_box_pk(recip_vk)
-    //         sk = pysodium.crypto_sign_sk_to_box_sk(secret)
-    //
-    //         encrypted_key = b64_to_bytes(recip["encrypted_key"], urlsafe=True)
-    // 
-    //         nonce_b64 = recip["header"].get("iv")
-    //         nonce = b64_to_bytes(nonce_b64, urlsafe=True) if nonce_b64 else None
-    //         sender_b64 = recip["header"].get("sender")
-    //         enc_sender = b64_to_bytes(sender_b64, urlsafe=True) if sender_b64 else None
-    // 
-    //         if nonce and enc_sender:
-    //             sender_vk_bin = pysodium.crypto_box_seal_open(enc_sender, pk, sk)
-    //             sender_vk = sender_vk_bin.decode("ascii")
-    //             sender_pk = pysodium.crypto_sign_pk_to_box_pk(b58_to_bytes(sender_vk_bin))
-    //             cek = pysodium.crypto_box_open(
-    //                 encrypted_key,
-    //                 nonce,
-    //                 sender_pk,
-    //                 sk,
-    //             )
-    //         else:
-    //             sender_vk = None
-    //             cek = pysodium.crypto_box_seal_open(encrypted_key, pk, sk)
-    //         return cek, sender_vk, recip_vk_b58
-    //      raise ValueError("No corresponding recipient key found in {}".format(not_found))
-    function locate_recipient_key(recipients, key, secret) {
+    function locate_recipient_key(recipients, keys) {
         not_found = [];
         for (let index in recipients) {
             let recip = recipients[index];
@@ -135,12 +89,12 @@ exports.setup = (async() => {
             }
 
             let recip_vk = Base58.decode(recip.header.kid);
-            if (!sodium.memcmp(recip_vk, key)) {
+            if (!sodium.memcmp(recip_vk, keys.publicKey)) {
                 not_found.push(recip.header.kid);
                 continue;
             }
-            let pk = recip_vk;
-            let sk = secret;
+            let pk = sodium.crypto_sign_ed25519_pk_to_curve25519(keys.publicKey);
+            let sk = sodium.crypto_sign_ed25519_sk_to_curve25519(keys.privateKey);
 
             let encrytped_key = b64dec(recip.encrypted_key);
             let nonce = recip.header.iv ? b64dec(recip.header.iv) : null;
@@ -150,8 +104,7 @@ exports.setup = (async() => {
             let cek = null;
             if (nonce && enc_sender) {
                 sender_vk = sodium.to_string(sodium.crypto_box_seal_open(enc_sender, pk, sk));
-                let sender_pk = Base58.decode(sender_vk);
-                console.log(sender_pk, sk);
+                let sender_pk = sodium.crypto_sign_ed25519_pk_to_curve25519(Base58.decode(sender_vk));
                 cek = sodium.crypto_box_open_easy(encrytped_key, nonce, sender_pk, sk);
             } else {
                 cek = sodium.crypto_box_seal_open(encrytped_key, pk, sk);
@@ -176,32 +129,6 @@ exports.setup = (async() => {
         });
     }
 
-    //def decode_pack_message(enc_message: bytes, find_key: Callable) -> (str, Optional[str], str):
-    //    """
-    //    Disassemble and unencrypt a packed message, returning the message content,
-    //    verification key of the sender (if available), and verification key of the recipient
-    //    """
-    //    wrapper = json.loads(enc_message)
-    //    protected_bin = wrapper["protected"].encode("ascii")
-    //    recips_json = b64_to_bytes(wrapper["protected"], urlsafe=True).decode("ascii")
-    //    recips_outer = json.loads(recips_json)
-    //
-    //    alg = recips_outer["alg"]
-    //    is_authcrypt = alg == "Authcrypt"
-    //    if not is_authcrypt and alg != "Anoncrypt":
-    //        raise ValueError("Unsupported pack algorithm: {}".format(alg))
-    //    cek, sender_vk, recip_vk = locate_recipient_key(recips_outer["recipients"], find_key)
-    //    if not sender_vk and is_authcrypt:
-    //        raise ValueError("Sender public key not provided for Authcrypt message")
-    //
-    //    ciphertext = b64_to_bytes(wrapper["ciphertext"], urlsafe=True)
-    //    nonce = b64_to_bytes(wrapper["iv"], urlsafe=True)
-    //    tag = b64_to_bytes(wrapper["tag"], urlsafe=True)
-    //
-    //    payload_bin = ciphertext + tag
-    //    message = decrypt_plaintext(payload_bin, protected_bin, nonce, cek)
-    //
-    //    return message, sender_vk, recip_vk
     exports.unpack_message = function(enc_message, to_keys) {
         wrapper = JSON.parse(enc_message);
         recips_json = str_b64dec(wrapper.protected);
@@ -212,7 +139,7 @@ exports.setup = (async() => {
         if (!is_authcrypt && alg != 'Anoncrypt') {
             throw 'Unsupported pack algorithm: ' + alg;
         }
-        let [cek, sender_vk, recip_vk] = locate_recipient_key(recips_outer.recipients, to_keys.publicKey, to_keys.privateKey);
+        let [cek, sender_vk, recip_vk] = locate_recipient_key(recips_outer.recipients, to_keys);
         if (!sender_vk && is_authcrypt) {
             throw 'Sender public key not provided in Authcrypt message';
         }
@@ -229,8 +156,8 @@ exports.setup = (async() => {
     }
 
     exports.test = function() {
-        let alice = sodium.crypto_box_keypair();
-        let bob = sodium.crypto_box_keypair();
+        let alice = sodium.crypto_sign_keypair();
+        let bob = sodium.crypto_sign_keypair();
         try {
             packed_msg = exports.pack_message("testing", [bob.publicKey], alice);
             console.log(packed_msg);
