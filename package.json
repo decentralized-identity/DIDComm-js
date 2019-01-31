@@ -9,6 +9,8 @@
   "author": "Daniel Bluhm <daniel.bluhm@sovrin.org>",
   "license": "Apache-2.0",
   "dependencies": {
+    "base-58": "0.0.1",
+    "bs58": "^4.0.1",
     "libsodium": "^0.7.3",
     "libsodium-wrappers": "^0.7.3"
   }
