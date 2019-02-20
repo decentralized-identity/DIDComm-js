@@ -130,7 +130,17 @@ exports.setup = (async() => {
     }
 
     exports.unpack_message = function(enc_message, to_keys) {
-        wrapper = JSON.parse(enc_message);
+        if (typeof enc_message === 'string'){
+            wrapper = JSON.parse(enc_message);
+        } else {
+            wrapper = enc_message;
+        }
+        if (typeof to_keys.publicKey === 'string'){
+            to_keys.publicKey = Base58.decode(to_keys.publicKey);
+        }
+        if (typeof to_keys.privateKey === 'string'){
+            to_keys.privateKey = Base58.decode(to_keys.privateKey);
+        }
         recips_json = str_b64dec(wrapper.protected);
         recips_outer = JSON.parse(recips_json);
 
