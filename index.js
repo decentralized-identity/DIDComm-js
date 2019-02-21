@@ -6,15 +6,15 @@ exports.setup = (async() => {
     const sodium = _sodium;
 
     function b64url(input) {
-        return sodium.to_base64(input, sodium.base64_variants.URLSAFE_NO_PADDING);
+        return sodium.to_base64(input, sodium.base64_variants.URLSAFE);
     }
 
     function b64dec(input) {
-        return sodium.from_base64(input, sodium.base64_variants.URLSAFE_NO_PADDING);
+        return sodium.from_base64(input, sodium.base64_variants.URLSAFE);
     }
 
     function str_b64dec(input) {
-        return sodium.to_string(sodium.from_base64(input, sodium.base64_variants.URLSAFE_NO_PADDING));
+        return sodium.to_string(sodium.from_base64(input, sodium.base64_variants.URLSAFE));
     }
 
     function encrypt_plaintext(message, add_data, key) {
@@ -49,7 +49,6 @@ exports.setup = (async() => {
 
             if (from_keys) {
                 let sender_vk = Base58.encode(from_keys.publicKey);
-                let sender_pk = sodium.crypto_sign_ed25519_pk_to_curve25519(from_keys.publicKey);
                 let sender_sk = sodium.crypto_sign_ed25519_sk_to_curve25519(from_keys.privateKey);
                 enc_sender = sodium.crypto_box_seal(sender_vk, target_pk);
 
