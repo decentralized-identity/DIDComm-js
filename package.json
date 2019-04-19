@@ -1,17 +1,33 @@
 {
   "name": "pack-unpack",
   "version": "1.0.0",
-  "description": "Pure javascript implementation of Indy Pack and Unpack",
-  "main": "index.js",
-  "scripts": {
-    "test": "node test.js"
-  },
+  "description": "Pure typescript implementation of Indy Pack and Unpack",
   "author": "Daniel Bluhm <daniel.bluhm@sovrin.org>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@types/libsodium-wrappers": "^0.7.5",
     "base-58": "0.0.1",
     "bs58": "^4.0.1",
     "libsodium": "^0.7.3",
     "libsodium-wrappers": "^0.7.3"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tslint -p tsconfig.json",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "test": "jest --config jestconfig.json",
+    "version": "git add -A src"
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.9",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.4",
+    "tslint": "^5.11.0",
+    "tslint-config-prettier": "^1.16.0",
+    "typescript": "^3.1.6"
   }
 }
