@@ -1,178 +1,187 @@
 import Base58 = require('base-58')
 import _sodium = require('libsodium-wrappers')
 
-const sodium = _sodium
+export class PackUnpack {
 
-export async function setup() {
-    await _sodium.ready
-}
+    private sodium: any
+    private initalized: boolean
 
-function b64url(input: any) {
-    return sodium.to_base64(input, sodium.base64_variants.URLSAFE)
-}
+    constructor() {
+        this.sodium = _sodium
+        this.initalized = false
+    }
 
-function b64dec(input: any) {
-    return sodium.from_base64(input, sodium.base64_variants.URLSAFE)
-}
+    public async setup() {
+        await _sodium.ready
+        this.initalized = true
+    }
 
-function strB64dec(input: any) {
-    return sodium.to_string(sodium.from_base64(input, sodium.base64_variants.URLSAFE))
-}
+    public async packMessage(message: any, toKeys: any, fromKeys: any = null) {
 
-function encryptPlaintext(message: any, addData: any, key: any) {
-    const iv = sodium.randombytes_buf(sodium.crypto_aead_chacha20poly1305_ietf_NPUBBYTES)
-    const out = sodium.crypto_aead_chacha20poly1305_ietf_encrypt_detached(message, addData, null, iv, key)
-    return [out.ciphertext, out.mac, iv]
-}
-
-function decryptPlaintext(ciphertext: any, mac: any, recipsBin: any, nonce: any, key: any) {
-    return sodium.to_string(
-        sodium.crypto_aead_chacha20poly1305_ietf_decrypt_detached(
-            null, // nsec
-            ciphertext,
-            mac,
-            recipsBin, // ad
-            nonce, // npub
-            key,
-        ),
-    )
-}
-
-function prepareRecipientKeys(toKeys: any, fromKeys: any = null) {
-    const cek = sodium.crypto_secretstream_xchacha20poly1305_keygen()
-    const recips: any[] = []
-
-    toKeys.forEach((targetVk: any) => {
-        let encCek = null
-        let encSender = null
-        let nonce = null
-
-        const targetPk = sodium.crypto_sign_ed25519_pk_to_curve25519(targetVk)
-
-        if (fromKeys) {
-            const senderVk = Base58.encode(fromKeys.publicKey)
-            const senderSk = sodium.crypto_sign_ed25519_sk_to_curve25519(fromKeys.privateKey)
-            encSender = sodium.crypto_box_seal(senderVk, targetPk)
-
-            nonce = sodium.randombytes_buf(sodium.crypto_box_NONCEBYTES)
-            encCek = sodium.crypto_box_easy(cek, nonce, targetPk, senderSk)
-        } else {
-            encCek = sodium.crypto_box_seal(cek, targetPk)
+        if (!this.initalized) {
+            await this.setup()
         }
 
-        recips.push(
-            {
-                encrypted_key: b64url(encCek),
-                header: {
-                    iv: nonce ? b64url(nonce) : null,
-                    kid: Base58.encode(targetVk),
-                    sender: encSender ? b64url(encSender) : null,
-                },
-            },
+        const [cek, recipsJson] = this.prepareRecipientKeys(toKeys, fromKeys)
+        const recipsB64 = this.b64url(recipsJson)
+
+        const [ciphertext, tag, iv] = this.encryptPlaintext(message, recipsB64, cek)
+
+        return JSON.stringify({
+            ciphertext: this.b64url(ciphertext),
+            iv: this.b64url(iv),
+            protected: recipsB64,
+            tag: this.b64url(tag),
+        })
+    }
+
+    public async unpackMessage(encMsg: any, toKeys: any) {
+
+        if (!this.initalized) {
+            await this.setup()
+        }
+
+        let wrapper
+        if (typeof encMsg === 'string') {
+            wrapper = JSON.parse(encMsg)
+        } else {
+            wrapper = encMsg
+        }
+        if (typeof toKeys.publicKey === 'string') {
+            toKeys.publicKey = Base58.decode(toKeys.publicKey)
+        }
+        if (typeof toKeys.privateKey === 'string') {
+            toKeys.privateKey = Base58.decode(toKeys.privateKey)
+        }
+        const recipsJson = this.strB64dec(wrapper.protected)
+        const recipsOuter = JSON.parse(recipsJson)
+
+        const alg = recipsOuter.alg
+        const isAuthcrypt = alg === 'Authcrypt'
+        if (!isAuthcrypt && alg !== 'Anoncrypt') {
+            throw new Error('Unsupported pack algorithm: ' + alg)
+        }
+        const { cek, senderVk, recipVk } = this.locateRecKey(recipsOuter.recipients, toKeys)
+        if (!senderVk && isAuthcrypt) {
+            throw new Error('Sender public key not provided in Authcrypt message')
+        }
+        const ciphertext = this.b64dec(wrapper.ciphertext)
+        const nonce = this.b64dec(wrapper.iv)
+        const tag = this.b64dec(wrapper.tag)
+
+        const message = this.decryptPlaintext(ciphertext, tag, wrapper.protected, nonce, cek)
+        return {
+            message,
+            recipient_key: recipVk,
+            sender_key: senderVk,
+        }
+    }
+
+    private b64url(input: any) {
+        return this.sodium.to_base64(input, this.sodium.base64_variants.URLSAFE)
+    }
+
+    private b64dec(input: any) {
+        return this.sodium.from_base64(input, this.sodium.base64_variants.URLSAFE)
+    }
+
+    private strB64dec(input: any) {
+        return this.sodium.to_string(this.sodium.from_base64(input, this.sodium.base64_variants.URLSAFE))
+    }
+
+    private encryptPlaintext(message: any, addData: any, key: any) {
+        const iv = this.sodium.randombytes_buf(this.sodium.crypto_aead_chacha20poly1305_ietf_NPUBBYTES)
+        const out = this.sodium.crypto_aead_chacha20poly1305_ietf_encrypt_detached(message, addData, null, iv, key)
+        return [out.ciphertext, out.mac, iv]
+    }
+
+    private decryptPlaintext(ciphertext: any, mac: any, recipsBin: any, nonce: any, key: any) {
+        return this.sodium.to_string(
+            this.sodium.crypto_aead_chacha20poly1305_ietf_decrypt_detached(
+                null, // nsec
+                ciphertext,
+                mac,
+                recipsBin, // ad
+                nonce, // npub
+                key,
+            ),
         )
-    })
-
-    const data = {
-        alg: fromKeys ? 'Authcrypt' : 'Anoncrypt',
-        enc: 'xchacha20poly1305_ietf',
-        recipients: recips,
-        typ: 'JWM/1.0',
     }
-    return [JSON.stringify(data), cek]
-}
 
-function locateRecKey(recipients: any[], keys: any) {
-    const notFound = []
-    recipients.forEach((_V, i) => {
-        const recip = recipients[i]
-        if (!('header' in recip) || !('encrypted_key' in recip)) {
-            throw new Error('Invalid recipient header')
+    private prepareRecipientKeys(toKeys: any, fromKeys: any = null) {
+        const cek = this.sodium.crypto_secretstream_xchacha20poly1305_keygen()
+        const recips: any[] = []
+
+        toKeys.forEach((targetVk: any) => {
+            let encCek = null
+            let encSender = null
+            let nonce = null
+
+            const targetPk = this.sodium.crypto_sign_ed25519_pk_to_curve25519(targetVk)
+
+            if (fromKeys) {
+                const senderVk = Base58.encode(fromKeys.publicKey)
+                const senderSk = this.sodium.crypto_sign_ed25519_sk_to_curve25519(fromKeys.privateKey)
+                encSender = this.sodium.crypto_box_seal(senderVk, targetPk)
+
+                nonce = this.sodium.randombytes_buf(this.sodium.crypto_box_NONCEBYTES)
+                encCek = this.sodium.crypto_box_easy(cek, nonce, targetPk, senderSk)
+            } else {
+                encCek = this.sodium.crypto_box_seal(cek, targetPk)
+            }
+
+            recips.push(
+                {
+                    encrypted_key: this.b64url(encCek),
+                    header: {
+                        iv: nonce ? this.b64url(nonce) : null,
+                        kid: Base58.encode(targetVk),
+                        sender: encSender ? this.b64url(encSender) : null,
+                    },
+                },
+            )
+        })
+
+        const data = {
+            alg: fromKeys ? 'Authcrypt' : 'Anoncrypt',
+            enc: 'xchacha20poly1305_ietf',
+            recipients: recips,
+            typ: 'JWM/1.0',
         }
-
-        const recipVk = Base58.decode(recip.header.kid)
-        if (!sodium.memcmp(recipVk, keys.publicKey)) {
-            notFound.push(recip.header.kid)
-        }
-        const pk = sodium.crypto_sign_ed25519_pk_to_curve25519(keys.publicKey)
-        const sk = sodium.crypto_sign_ed25519_sk_to_curve25519(keys.privateKey)
-
-        const encrytpedKey = b64dec(recip.encrypted_key)
-        const nonce = recip.header.iv ? b64dec(recip.header.iv) : null
-        const encSender = recip.header.sender ? b64dec(recip.header.sender) : null
-
-        let senderVk = null
-        let cek = null
-        if (nonce && encSender) {
-            senderVk = sodium.to_string(sodium.crypto_box_seal_open(encSender, pk, sk))
-            const senderPk = sodium.crypto_sign_ed25519_pk_to_curve25519(Base58.decode(senderVk))
-            cek = sodium.crypto_box_open_easy(encrytpedKey, nonce, senderPk, sk)
-        } else {
-            cek = sodium.crypto_box_seal_open(encrytpedKey, pk, sk)
-        }
-        return [cek, senderVk, recip.header.kid]
-    })
-
-    throw new Error('No corresponding recipient key found in recipients')
-}
-
-export async function packMessage(message: any, toKeys: any, fromKeys = null) {
-    const [cek, recipsJson] = prepareRecipientKeys(toKeys, fromKeys)
-    const recipsB64 = b64url(recipsJson)
-
-    const [ciphertext, tag, iv] = encryptPlaintext(message, recipsB64, cek)
-
-    return JSON.stringify({
-        ciphertext: b64url(ciphertext),
-        iv: b64url(iv),
-        protected: recipsB64,
-        tag: b64url(tag),
-    })
-}
-
-export async function unpackMessage(encMsg: any, toKeys: any) {
-    if (typeof encMsg: any === 'string') {
-        wrapper = JSON.parse(encMsg: any)
-    } else {
-        wrapper = encMsg: any
+        return [JSON.stringify(data), cek]
     }
-    if (typeof toKeys.publicKey === 'string') {
-        toKeys.publicKey = Base58.decode(toKeys.publicKey)
-    }
-    if (typeof toKeys.privateKey === 'string') {
-        toKeys.privateKey = Base58.decode(toKeys.privateKey)
-    }
-    recipsJson = strB64dec(wrapper.protected)
-    recips_outer = JSON.parse(recipsJson)
 
-    alg = recips_outer.alg
-    is_authcrypt = alg == 'Authcrypt'
-    if (!is_authcrypt && alg != 'Anoncrypt') {
-        throw new Error('Unsupported pack algorithm: ' + alg);
-    }
-    const [cek, senderVk, recipVk] = locateRecKey(recips_outer.recipients, toKeys)
-    if (!senderVk && is_authcrypt) {
-        throw new Error('Sender public key not provided in Authcrypt message');
-    }
-    ciphertext = b64dec(wrapper.ciphertext)
-    nonce = b64dec(wrapper.iv)
-    tag = b64dec(wrapper.tag)
+    private locateRecKey(recipients: any[], keys: any): { cek: any, senderVk: any, recipVk: any } {
+        const notFound = []
+        recipients.forEach((_V, i) => {
+            const recip = recipients[i]
+            if (!('header' in recip) || !('encrypted_key' in recip)) {
+                throw new Error('Invalid recipient header')
+            }
 
-    message = decryptPlaintext(ciphertext, tag, wrapper.protected, nonce, cek)
-    return {
-        message,
-        sender_key: senderVk,
-        recipient_key: recipVk,
+            const recipVk = Base58.decode(recip.header.kid)
+            if (!this.sodium.memcmp(recipVk, keys.publicKey)) {
+                notFound.push(recip.header.kid)
+            }
+            const pk = this.sodium.crypto_sign_ed25519_pk_to_curve25519(keys.publicKey)
+            const sk = this.sodium.crypto_sign_ed25519_sk_to_curve25519(keys.privateKey)
+
+            const encrytpedKey = this.b64dec(recip.encrypted_key)
+            const nonce = recip.header.iv ? this.b64dec(recip.header.iv) : null
+            const encSender = recip.header.sender ? this.b64dec(recip.header.sender) : null
+
+            let senderVk = null
+            let cek = null
+            if (nonce && encSender) {
+                senderVk = this.sodium.to_string(this.sodium.crypto_box_seal_open(encSender, pk, sk))
+                const senderPk = this.sodium.crypto_sign_ed25519_pk_to_curve25519(Base58.decode(senderVk))
+                cek = this.sodium.crypto_box_open_easy(encrytpedKey, nonce, senderPk, sk)
+            } else {
+                cek = this.sodium.crypto_box_seal_open(encrytpedKey, pk, sk)
+            }
+            return { cek, senderVk, recipVk: recip.header.kid }
+        })
+
+        throw new Error('No corresponding recipient key found in recipients')
     }
 }
-
-// export function test() {
-//     const alice = sodium.crypto_sign_keypair()
-//     const bob = sodium.crypto_sign_keypair()
-//     try {
-//         packed_msg = exports.pack_message('testing', [bob.publicKey], alice)
-//         console.log(packed_msg)
-//         console.log(exports.unpack_message(packed_msg, bob))
-//     } catch (e) {
-//         console.log(e)
-//     }
-// }
