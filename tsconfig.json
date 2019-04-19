@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
-    "lib": ["es2015"],
+    "lib": ["es2015", "dom"],
     "target": "es5",
     "module": "commonjs",
-    "declaration": true,
     "outDir": "./lib",
     "strict": true,
     "allowSyntheticDefaultImports": true,

@@ -19,7 +19,7 @@
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "preversion": "npm run lint",
-    "test": "jest --config jestconfig.json",
+    "test": "jest --runInBand",
     "version": "git add -A src"
   },
   "devDependencies": {

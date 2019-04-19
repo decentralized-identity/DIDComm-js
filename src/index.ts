@@ -7,22 +7,22 @@ export class PackUnpack {
     private initalized: boolean
 
     constructor() {
-        this.sodium = _sodium
         this.initalized = false
     }
 
     public async setup() {
         await _sodium.ready
+        this.sodium = _sodium
         this.initalized = true
     }
 
-    public async packMessage(message: any, toKeys: any, fromKeys: any = null) {
+    public async packMessage(message: string, toKeys: Uint8Array[], fromKeys: _sodium.KeyPair | null = null) {
 
         if (!this.initalized) {
             await this.setup()
         }
 
-        const [cek, recipsJson] = this.prepareRecipientKeys(toKeys, fromKeys)
+        const [recipsJson, cek] = this.prepareRecipientKeys(toKeys, fromKeys)
         const recipsB64 = this.b64url(recipsJson)
 
         const [ciphertext, tag, iv] = this.encryptPlaintext(message, recipsB64, cek)
@@ -35,7 +35,7 @@ export class PackUnpack {
         })
     }
 
-    public async unpackMessage(encMsg: any, toKeys: any) {
+    public async unpackMessage(encMsg: string, toKeys: _sodium.KeyPair) {
 
         if (!this.initalized) {
             await this.setup()
@@ -61,7 +61,7 @@ export class PackUnpack {
         if (!isAuthcrypt && alg !== 'Anoncrypt') {
             throw new Error('Unsupported pack algorithm: ' + alg)
         }
-        const { cek, senderVk, recipVk } = this.locateRecKey(recipsOuter.recipients, toKeys)
+        const [cek, senderVk, recipVk] = this.locateRecKey(recipsOuter.recipients, toKeys)
         if (!senderVk && isAuthcrypt) {
             throw new Error('Sender public key not provided in Authcrypt message')
         }
@@ -151,10 +151,11 @@ export class PackUnpack {
         return [JSON.stringify(data), cek]
     }
 
-    private locateRecKey(recipients: any[], keys: any): { cek: any, senderVk: any, recipVk: any } {
-        const notFound = []
-        recipients.forEach((_V, i) => {
-            const recip = recipients[i]
+    private locateRecKey(recipients: any, keys: any) {
+        let notFound = []
+        /* tslint:disable */
+        for (let index in recipients) {
+            const recip = recipients[index]
             if (!('header' in recip) || !('encrypted_key' in recip)) {
                 throw new Error('Invalid recipient header')
             }
@@ -179,8 +180,8 @@ export class PackUnpack {
             } else {
                 cek = this.sodium.crypto_box_seal_open(encrytpedKey, pk, sk)
             }
-            return { cek, senderVk, recipVk: recip.header.kid }
-        })
+            return [cek, senderVk, recip.header.kid]
+        }
 
         throw new Error('No corresponding recipient key found in recipients')
     }
