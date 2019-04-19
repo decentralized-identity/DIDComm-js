@@ -1,4 +1,3 @@
-import _sodium = require('libsodium-wrappers')
 import { PackUnpack } from '.'
 
 describe('pack and unpack', () => {
@@ -7,10 +6,8 @@ describe('pack and unpack', () => {
         // Prep test suite
         const packUnpack = new PackUnpack()
         await packUnpack.setup()
-        await _sodium.ready
-        const sodium = _sodium
-        const alice = sodium.crypto_sign_keypair()
-        const bob = sodium.crypto_sign_keypair()
+        const alice = await packUnpack.generateKeyPair()
+        const bob = await packUnpack.generateKeyPair()
         const message = 'I AM A PRIVATE MESSAGE'
 
         const packedMsg = await packUnpack.packMessage(message, [bob.publicKey], alice)
@@ -22,10 +19,8 @@ describe('pack and unpack', () => {
         // Prep test suite
         const packUnpack = new PackUnpack()
         await packUnpack.setup()
-        await _sodium.ready
-        const sodium = _sodium
-        const alice = sodium.crypto_sign_keypair()
-        const bob = sodium.crypto_sign_keypair()
+        const alice = await packUnpack.generateKeyPair()
+        const bob = await packUnpack.generateKeyPair()
         const message = JSON.stringify({
             '@id': '1111-22222-3333-44444',
             '@type': 'DID:sov;spec/enroll/0.1/status',

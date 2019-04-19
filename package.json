@@ -1,6 +1,6 @@
 {
   "name": "pack-unpack",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Pure typescript implementation of Indy Pack and Unpack",
   "author": "Daniel Bluhm <daniel.bluhm@sovrin.org>",
   "license": "Apache-2.0",

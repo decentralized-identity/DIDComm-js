@@ -16,6 +16,12 @@ export class PackUnpack {
         this.initalized = true
     }
 
+    /**
+     *
+     * @param message string message to be encrypted
+     * @param toKeys public key of the entity encrypting message for
+     * @param fromKeys keypair of person encrypting message
+     */
     public async packMessage(message: string, toKeys: Uint8Array[], fromKeys: _sodium.KeyPair | null = null) {
 
         if (!this.initalized) {
@@ -35,6 +41,11 @@ export class PackUnpack {
         })
     }
 
+    /**
+     *
+     * @param encMsg message to be decrypted
+     * @param toKeys key pair of party decrypting the message
+     */
     public async unpackMessage(encMsg: string, toKeys: _sodium.KeyPair) {
 
         if (!this.initalized) {
@@ -75,6 +86,18 @@ export class PackUnpack {
             recipient_key: recipVk,
             sender_key: senderVk,
         }
+    }
+
+    /**
+     * Uses libsodium to generate a key pair, you may pass these keys into the pack/unpack functions
+     */
+    public async generateKeyPair() {
+
+        if (!this.initalized) {
+            await this.setup()
+        }
+
+        return this.sodium.crypto_sign_keypair()
     }
 
     private b64url(input: any) {
