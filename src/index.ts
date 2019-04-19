@@ -152,7 +152,7 @@ export class PackUnpack {
     }
 
     private locateRecKey(recipients: any, keys: any) {
-        let notFound = []
+        const notFound = []
         /* tslint:disable */
         for (let index in recipients) {
             const recip = recipients[index]
