@@ -3,3 +3,4 @@ tsconfig.json
 tslint.json
 .prettierrc
 jestconfig.json
+jest.config.js
