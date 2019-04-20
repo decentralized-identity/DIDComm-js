@@ -1,6 +1,12 @@
 import Base58 = require('base-58')
 import _sodium = require('libsodium-wrappers')
 
+interface IUnpackedMsg {
+    message: string,
+    recipientKey: any,
+    senderKey: any
+}
+
 export class PackUnpack {
 
     private sodium: any
@@ -22,7 +28,8 @@ export class PackUnpack {
      * @param toKeys public key of the entity encrypting message for
      * @param fromKeys keypair of person encrypting message
      */
-    public async packMessage(message: string, toKeys: Uint8Array[], fromKeys: _sodium.KeyPair | null = null) {
+    public async packMessage(
+        message: string, toKeys: Uint8Array[], fromKeys: _sodium.KeyPair | null = null): Promise<string> {
 
         if (!this.initalized) {
             await this.setup()
@@ -46,7 +53,7 @@ export class PackUnpack {
      * @param encMsg message to be decrypted
      * @param toKeys key pair of party decrypting the message
      */
-    public async unpackMessage(encMsg: string, toKeys: _sodium.KeyPair) {
+    public async unpackMessage(encMsg: string, toKeys: _sodium.KeyPair): Promise<IUnpackedMsg> {
 
         if (!this.initalized) {
             await this.setup()
@@ -83,15 +90,15 @@ export class PackUnpack {
         const message = this.decryptPlaintext(ciphertext, tag, wrapper.protected, nonce, cek)
         return {
             message,
-            recipient_key: recipVk,
-            sender_key: senderVk,
+            recipientKey: recipVk,
+            senderKey: senderVk,
         }
     }
 
     /**
      * Uses libsodium to generate a key pair, you may pass these keys into the pack/unpack functions
      */
-    public async generateKeyPair() {
+    public async generateKeyPair(): Promise<_sodium.KeyPair> {
 
         if (!this.initalized) {
             await this.setup()
