@@ -1,5 +1,5 @@
 import Base58 = require('base-58')
-import _sodium = require('libsodium-wrappers')
+import sodium = require('libsodium-wrappers')
 
 interface IUnpackedMsg {
     message: string,
@@ -9,31 +9,41 @@ interface IUnpackedMsg {
 
 export class PackUnpack {
 
+    public readonly Ready: Promise<undefined>
     private sodium: any
-    private initalized: boolean
 
+    /**
+     * Creates a new PackUnpack object. The returned object contains a .Ready property:
+     * a promise that must be resolved before the object can be used. You can
+     * simply `await` the resolution of the .Ready property.
+     *
+     * Example:
+     * const packUnpack = new PackUnpack
+     * (async () => {
+     *  await packUnpack.Ready
+     * }())
+     */
     constructor() {
-        this.initalized = false
-    }
-
-    public async setup() {
-        await _sodium.ready
-        this.sodium = _sodium
-        this.initalized = true
+        this.Ready = new Promise(async (res, rej) => {
+            try {
+                await sodium.ready
+                this.sodium = sodium
+                res()
+            } catch (err) {
+                rej(err)
+            }
+        })
     }
 
     /**
      *
+     * Packs a message.
      * @param message string message to be encrypted
      * @param toKeys public key of the entity encrypting message for
      * @param fromKeys keypair of person encrypting message
      */
     public async packMessage(
-        message: string, toKeys: Uint8Array[], fromKeys: _sodium.KeyPair | null = null): Promise<string> {
-
-        if (!this.initalized) {
-            await this.setup()
-        }
+        message: string, toKeys: Uint8Array[], fromKeys: sodium.KeyPair | null = null): Promise<string> {
 
         const [recipsJson, cek] = this.prepareRecipientKeys(toKeys, fromKeys)
         const recipsB64 = this.b64url(recipsJson)
@@ -49,15 +59,11 @@ export class PackUnpack {
     }
 
     /**
-     *
+     * Unpacks a message
      * @param encMsg message to be decrypted
      * @param toKeys key pair of party decrypting the message
      */
-    public async unpackMessage(encMsg: string, toKeys: _sodium.KeyPair): Promise<IUnpackedMsg> {
-
-        if (!this.initalized) {
-            await this.setup()
-        }
+    public async unpackMessage(encMsg: string, toKeys: sodium.KeyPair): Promise<IUnpackedMsg> {
 
         let wrapper
         if (typeof encMsg === 'string') {
@@ -98,12 +104,7 @@ export class PackUnpack {
     /**
      * Uses libsodium to generate a key pair, you may pass these keys into the pack/unpack functions
      */
-    public async generateKeyPair(): Promise<_sodium.KeyPair> {
-
-        if (!this.initalized) {
-            await this.setup()
-        }
-
+    public async generateKeyPair(): Promise<sodium.KeyPair> {
         return this.sodium.crypto_sign_keypair()
     }
 
