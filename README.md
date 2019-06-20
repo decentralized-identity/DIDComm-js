@@ -1,2 +1,2 @@
-# pack-unpack
-Pure typescript implementation of Indy Pack and Unpack
+# Encryption Envelope JS
+Javascript (written in typescript) version of the encryption envelope for both anoncrypt & authcrypted messages. This library is built for any javascript environment that needs to use the encrypted format. It is built on libsodium-js and has been tested and verified secure against the indy-sdk Rust implimentation found here: https://github.com/hyperledger/aries-rfcs/blob/master/features/0019-encryption-envelope/README.md
