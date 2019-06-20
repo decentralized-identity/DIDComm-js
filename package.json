@@ -1,11 +1,11 @@
 {
   "name": "pack-unpack",
   "version": "1.1.4 ",
-  "description": "Pure typescript/javascript implementation of Indy Pack and Unpack",
-  "contributors": [{"name": "Daniel Bluhm", "email": "daniel.bluhm@sovrin.org"}],
+  "description": "Javascript Wire Message Format written in Typescript",
+  "contributors": [{"name": "Daniel Bluhm", "email": "daniel.bluhm@sovrin.org"}, {"name": "Joe Genereux", "email": "joe.genereux@workday.com"}],
   "repository": {
     "type" : "git",
-    "url" : "https://github.com/thedolie/indy-pack-unpack"
+    "url" : "https://github.com/thedolie/wire-message-format-js"
   },
   "license": "Apache-2.0",
   "dependencies": {
