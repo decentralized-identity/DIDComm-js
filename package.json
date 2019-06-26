@@ -1,11 +1,20 @@
 {
   "name": "encryption-envelope-js",
-  "version": "1.1.4 ",
+  "version": "1.1.4",
   "description": "Javascript Wire Message Format written in Typescript",
-  "contributors": [{"name": "Daniel Bluhm", "email": "daniel.bluhm@sovrin.org"}, {"name": "Joe Genereux", "email": "joe.genereux@workday.com"}],
+  "contributors": [
+    {
+      "name": "Daniel Bluhm",
+      "email": "daniel.bluhm@sovrin.org"
+    },
+    {
+      "name": "Joe Genereux",
+      "email": "joe.genereux@workday.com"
+    }
+  ],
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/thedolie/wire-message-format-js"
+    "type": "git",
+    "url": "https://github.com/thedolie/wire-message-format-js"
   },
   "license": "Apache-2.0",
   "dependencies": {
@@ -28,7 +37,7 @@
   },
   "devDependencies": {
     "@types/jest": "^23.3.9",
-    "jest": "^23.6.0",
+    "jest": "^24.8.0",
     "ts-jest": "^23.10.4",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.16.0",

@@ -1,4 +1,3 @@
-import _sodium = require('libsodium-wrappers')
 import { PackUnpack } from '.'
 
 describe('pack and unpack', () => {
