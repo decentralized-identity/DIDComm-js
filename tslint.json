@@ -1,0 +1,14 @@
+{
+   "extends": ["tslint:recommended"],
+   "rules": {
+      "no-unnecessary-type-assertion": [false],
+      "semicolon": [true, "never"],
+      "quotemark": [true, "single", "avoid-escape", "avoid-template"],
+      "no-string-literal": false,
+      "no-console": false
+   },
+   "linterOptions": {
+      "exclude": ["node_modules"]
+   },
+   "defaultSeverity": "error"
+}
