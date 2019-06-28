@@ -1,9 +1,9 @@
-import { PackUnpack } from '.'
+import { DIDComm } from '.'
 
 describe('pack and unpack', () => {
 
     it('is an async constructor', async () => {
-        const packUnpack = new PackUnpack()
+        const packUnpack = new DIDComm()
         const unresolvedVal = packUnpack.Ready
         expect(unresolvedVal).toBeInstanceOf(Promise)
         const val = await packUnpack.Ready
@@ -12,7 +12,7 @@ describe('pack and unpack', () => {
 
     it('it packs and unpacks a message', async () => {
         // Prep test suite
-        const packUnpack = new PackUnpack()
+        const packUnpack = new DIDComm()
         await packUnpack.Ready
         const alice = await packUnpack.generateKeyPair()
         const bob = await packUnpack.generateKeyPair()

@@ -7,7 +7,7 @@ interface IUnpackedMsg {
     senderKey: any
 }
 
-export class PackUnpack {
+export class DIDComm {
 
     public readonly Ready: Promise<undefined>
     private sodium: any
