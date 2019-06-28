@@ -140,7 +140,7 @@ export class DIDComm {
     }
 
     private prepareRecipientKeys(toKeys: any, fromKeys: any = null) {
-        const cek = this.sodium.crypto_secretstream_chacha20poly1305_keygen()
+        const cek = this.sodium.crypto_aead_chacha20poly1305_ietf_keygen()
         const recips: any[] = []
 
         toKeys.forEach((targetVk: any) => {
