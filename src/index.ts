@@ -216,4 +216,38 @@ export class DIDComm {
 
         throw new Error('No corresponding recipient key found in recipients')
     }
+
+    private signContent(keyPair: any, message: any) {
+    // get public key base58 encoded
+    const senderVk = Base58.encode(keyPair.publicKey)
+
+    // generate jose header, b64url encode it, and concat to b64url encoded payload
+    let jose_header = {
+        alg: 'EdDSA',
+        kid: senderVk
+    }
+    let jose_string = JSON.stringify(jose_header);
+    let b64_jose_str = this.b64url(jose_string);
+    let b64_payload = this.b64url(message);
+    let header_and_payload_concat = `${b64_jose_str}.${b64_payload}`;
+
+    //sign data and return compact JWS
+    let signature = this.b64url(sodium.crypto_sign(header_and_payload_concat, keyPair.privateKey));
+    return `${header_and_payload_concat}.${signature}`;
+}
+
+    private verifyContent(jws: any) {
+        let jws_split = jws.split('.');
+        let jose_header = JSON.parse(this.strB64dec(jws_split[0]));
+        if (jose_header.alg != 'EdDSA') {
+            throw "Cryptographic algorithm unidentifiable"
+        };
+        let sig_msg = sodium.crypto_sign_open(this.b64dec(jws_split[2]), Base58.decode(jose_header.kid));
+
+        return {
+            content: this.strB64dec(jws_split[1]),
+            verkey: jose_header.kid,
+            verified: (sodium.to_string(sig_msg) === `${jws_split[0]}.${jws_split[1]}`) ? true : false
+        };
+    }
 }
