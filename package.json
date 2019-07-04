@@ -1,7 +1,7 @@
 {
-  "name": "encryption-envelope-js",
-  "version": "1.1.4",
-  "description": "Javascript Wire Message Format written in Typescript",
+  "name": "DIDComm-js",
+  "version": "0.6.0",
+  "description": "Cryptographic envelope layer of DIDComm written in Typescript",
   "contributors": [
     {
       "name": "Daniel Bluhm",
@@ -14,13 +14,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/thedolie/wire-message-format-js"
+    "url": "https://github.com/decenetralized-identity/DIDComm-js"
   },
   "license": "Apache-2.0",
   "dependencies": {
     "@types/libsodium-wrappers": "^0.7.5",
     "base-58": "0.0.1",
-    "bs58": "^4.0.1",
     "libsodium": "^0.7.3",
     "libsodium-wrappers": "^0.7.3"
   },
@@ -36,7 +35,7 @@
     "version": "git add -A src"
   },
   "devDependencies": {
-    "@types/jest": "^23.3.9",
+    "@types/jest": "^23.3.14",
     "jest": "^24.8.0",
     "ts-jest": "^23.10.4",
     "tslint": "^5.11.0",
