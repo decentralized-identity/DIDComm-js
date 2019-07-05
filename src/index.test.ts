@@ -3,23 +3,84 @@ import { DIDComm } from '.'
 describe('pack and unpack', () => {
 
     it('is an async constructor', async () => {
-        const packUnpack = new DIDComm()
-        const unresolvedVal = packUnpack.Ready
+        const didcomm = new DIDComm()
+        const unresolvedVal = didcomm.Ready
         expect(unresolvedVal).toBeInstanceOf(Promise)
-        const val = await packUnpack.Ready
+        const val = await didcomm.Ready
         expect(val).toEqual(undefined)
     })
 
-    it('it packs and unpacks a message', async () => {
+    it('it packs and unpacks a message with repudiable authentication', async () => {
         // Prep test suite
-        const packUnpack = new DIDComm()
-        await packUnpack.Ready
-        const alice = await packUnpack.generateKeyPair()
-        const bob = await packUnpack.generateKeyPair()
+        const didcomm = new DIDComm()
+        await didcomm.Ready
+        const alice = await didcomm.generateKeyPair()
+        const bob = await didcomm.generateKeyPair()
         const message = 'I AM A PRIVATE MESSAGE'
 
-        const packedMsg = await packUnpack.packMessage(message, [bob.publicKey], alice)
-        const unpackedMsg = await packUnpack.unpackMessage(packedMsg, bob)
+        const packedMsg = await didcomm.pack_auth_msg_for_recipients(message, [bob.publicKey], alice)
+        const unpackedMsg = await didcomm.unpackMessage(packedMsg, bob)
         expect(unpackedMsg.message).toEqual(message)
+    })
+
+    it('it packs and unpacks a message with nonrepudiable authentication', async () => {
+        // Prep test suite
+        const didcomm = new DIDComm()
+        await didcomm.Ready
+        const alice = await didcomm.generateKeyPair()
+        const bob = await didcomm.generateKeyPair()
+        const message = 'I AM A PRIVATE MESSAGE'
+
+        const packedMsg = await didcomm.pack_auth_msg_for_recipients(message, [bob.publicKey], alice, true)
+        const unpackedMsg = await didcomm.unpackMessage(packedMsg, bob)
+        expect(unpackedMsg.message).toEqual(message)
+        expect(unpackedMsg.nonRepudiableVerification).toEqual(true)
+    })
+
+    it('it checks that a packed message with alg still gets unpacked properly', async () => {
+        // Prep test suite
+        const didcomm = new DIDComm()
+        await didcomm.Ready
+        const alice = await didcomm.generateKeyPair()
+        const bob = await didcomm.generateKeyPair()
+        const message = JSON.stringify({
+            "@type": "did:example:1234567890;spec/test",
+            alg: "edDSA",
+            data: "I AM A SIGNED MESSAGE"
+        })
+
+        const packedMsg = await didcomm.pack_auth_msg_for_recipients(message, [bob.publicKey], alice)
+        const unpackedMsg = await didcomm.unpackMessage(packedMsg, bob)
+        expect(unpackedMsg.message).toEqual(message)
+    })
+
+    it('it checks that an anonymous packed message can be unpacked', async () => {
+        // Prep test suite
+        const didcomm = new DIDComm()
+        await didcomm.Ready
+        const bob = await didcomm.generateKeyPair()
+        const message = JSON.stringify({
+            "@type": "did:example:1234567890;spec/test",
+            alg: "edDSA",
+            data: "I AM A SIGNED MESSAGE"
+        })
+
+        const packedMsg = await didcomm.pack_anon_msg_for_recipients(message, [bob.publicKey])
+        const unpackedMsg = await didcomm.unpackMessage(packedMsg, bob)
+        expect(unpackedMsg.message).toEqual(message)
+    })
+
+    it('it checks that an anonymous packed message can be unpacked', async () => {
+        // Prep test suite
+        const didcomm = new DIDComm()
+        await didcomm.Ready
+        const bob = await didcomm.generateKeyPair()
+        const message = "I AM A PUBLIC MESSAGE"
+
+        const packedMsg = await didcomm.pack_nonrepudiable_msg_for_anyone(message, bob)
+        const unpackedMsg = await didcomm.unpackMessage(packedMsg, bob)
+        expect(unpackedMsg.message).toEqual(message)
+        expect(unpackedMsg.recipientKey).toEqual(null)
+        console.log(unpackedMsg)
     })
 })
