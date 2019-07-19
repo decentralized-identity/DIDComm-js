@@ -1,5 +1,7 @@
 # DIDComm-crypto-js
-Javascript (written in typescript) version of the cryptographic envelope of DIDComm. This library is built for any javascript environment that needs to . It is built on libsodium-js and follows the specs documented in the [docs](/docs/README.md) folder.
+Javascript (written in typescript) version of the cryptographic envelope of DIDComm. This library is built for any javascript environment that needs to . It is built on [TweetNaCl.js](https://tweetnacl.js.org/) and follows the specs documented in the [docs](/docs/README.md) folder (with the exception of choice of encryption algorithm).
+
+This version changes the use of `chacha20poly1305_ietf` to `xsalsa20-poly1305` (aka `secretbox`). The primary reason is to remove the reliance on libsodium.js which brings the size of a distribution over what can realistically be expected to be added to web clients.
 
 ## installation
 This package is currently not available on NPM: It will be added to npm under the package name `DIDComm-crypto-js` when a CI/CD platform can be added to publish it.
@@ -15,7 +17,6 @@ pack_auth_msg_for_recipients(message, recipientKeyList, senderKeyPair, nonRepudi
 
 ```typescript
     const didcomm = new DIDComm()
-    await didcomm.Ready
     const alice = await didcomm.generateKeyPair()
     const bob = await didcomm.generateKeyPair()
     const message = 'I AM A PRIVATE MESSAGE'
@@ -28,7 +29,6 @@ To Encrypt a message for a recipient and sign the message using a non-repudiable
 
 ```typescript
     const didcomm = new DIDComm()
-    await didcomm.Ready
     const alice = await didcomm.generateKeyPair()
     const bob = await didcomm.generateKeyPair()
     const message = 'I AM A PRIVATE MESSAGE'
@@ -42,7 +42,6 @@ For privacy reasons or to meet the principle of least information, it may be nec
 
 ```typescript
     const didcomm = new DIDComm()
-    await didcomm.Ready
     const bob = await didcomm.generateKeyPair()
     const message = JSON.stringify({
         "@type": "did:example:1234567890;spec/test",
@@ -58,7 +57,6 @@ In very specific use cases like the invitation protocol or incredibly short live
 
 ```typescript
     const didcomm = new DIDComm()
-    await didcomm.Ready
     const bob = await didcomm.generateKeyPair()
     const message = "I AM A PUBLIC MESSAGE"
     const packedMsg = await didcomm.pack_nonrepudiable_msg_for_anyone(message, bob)

@@ -2,18 +2,9 @@ import { DIDComm } from '.'
 
 describe('pack and unpack', () => {
 
-    it('is an async constructor', async () => {
-        const didcomm = new DIDComm()
-        const unresolvedVal = didcomm.Ready
-        expect(unresolvedVal).toBeInstanceOf(Promise)
-        const val = await didcomm.Ready
-        expect(val).toEqual(undefined)
-    })
-
     it('it packs and unpacks a message with repudiable authentication', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
         const alice = await didcomm.generateKeyPair()
         const bob = await didcomm.generateKeyPair()
         const message = 'I AM A PRIVATE MESSAGE'
@@ -26,7 +17,6 @@ describe('pack and unpack', () => {
     it('it packs and unpacks a message with nonrepudiable authentication', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
         const alice = await didcomm.generateKeyPair()
         const bob = await didcomm.generateKeyPair()
         const message = 'I AM A PRIVATE MESSAGE'
@@ -40,7 +30,6 @@ describe('pack and unpack', () => {
     it('it checks that a packed message with alg still gets unpacked properly', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
         const alice = await didcomm.generateKeyPair()
         const bob = await didcomm.generateKeyPair()
         const message = JSON.stringify({
@@ -57,7 +46,6 @@ describe('pack and unpack', () => {
     it('it checks that an anonymous packed message can be unpacked', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
         const bob = await didcomm.generateKeyPair()
         const message = JSON.stringify({
             "@type": "did:example:1234567890;spec/test",
@@ -73,7 +61,6 @@ describe('pack and unpack', () => {
     it('it checks that an anonymous packed message can be unpacked', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
         const bob = await didcomm.generateKeyPair()
         const message = "I AM A PUBLIC MESSAGE"
 
@@ -81,6 +68,5 @@ describe('pack and unpack', () => {
         const unpackedMsg = await didcomm.unpackMessage(packedMsg, bob)
         expect(unpackedMsg.message).toEqual(message)
         expect(unpackedMsg.recipientKey).toEqual(null)
-        console.log(unpackedMsg)
     })
 })
