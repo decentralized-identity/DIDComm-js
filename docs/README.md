@@ -10,7 +10,7 @@ This library focuses on the cryptographic layer of DIDComm which handles encrypt
 
 To learn more about the data model used for encryption check [here](encryption-spec.md). 
 
-To learn more about non-repudiable versus repudiable reference [here](/docs/repudiable-vs-non-repudiable.md).
+To learn more about non-repudiable versus repudiable reference [here](https://github.com/hyperledger/aries-rfcs/tree/master/concepts/0049-repudiation).
 
 To learn more about non-repudiable signatures check [here](/docs/signing-spec.md).
 
