@@ -1,5 +1,8 @@
 import Base58 = require('base-58')
-import sodium = require('libsodium-wrappers')
+import * as nacl from 'tweetnacl'
+import naclutil from 'tweetnacl-util'
+import { convertKeyPair, convertPublicKey } from 'ed2curve-esm'
+import * as sealedbox from 'tweetnacl-sealedbox-js'
 
 interface IUnpackedMsg {
     message: string,
@@ -14,10 +17,9 @@ interface JWSUnpacked {
     verified: boolean
 }
 
-export class DIDComm {
+const JWS_REGEX = /^([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/
 
-    public readonly Ready: Promise<undefined>
-    private sodium: any
+export class DIDComm {
 
     /**
      * Creates a new PackUnpack object. The returned object contains a .Ready property:
@@ -31,23 +33,14 @@ export class DIDComm {
      * }())
      */
     constructor() {
-        this.Ready = new Promise(async (res, rej) => {
-            try {
-                await sodium.ready
-                this.sodium = sodium
-                res()
-            } catch (err) {
-                rej(err)
-            }
-        })
     }
 
     /**
-    * Uses libsodium to generate a key pair, you may pass these keys into the pack/unpack functions
+    * Uses tweetnacl to generate a key pair, you may pass these keys into the pack/unpack functions
     * @
     */
-    public async generateKeyPair(): Promise<sodium.KeyPair> {
-        return this.sodium.crypto_sign_keypair()
+    public async generateKeyPair(): Promise<nacl.SignKeyPair> {
+        return nacl.sign.keyPair()
     }
 
     /**
@@ -62,7 +55,7 @@ export class DIDComm {
      *          if nonRepudiable == false returns the msg encrypted as follows JWE(msg)
      */
     public async pack_auth_msg_for_recipients(
-        msg: string, recipientKeys: Uint8Array[], senderKeys: sodium.KeyPair, nonRepudiable: Boolean = false) : Promise<string> {
+        msg: string, recipientKeys: Uint8Array[], senderKeys: nacl.SignKeyPair, nonRepudiable: Boolean = false) : Promise<string> {
         if (nonRepudiable) {
             //return JWE(JWS(msg))
             let signedMsg = await this.signContent(msg, senderKeys);
@@ -91,7 +84,7 @@ export class DIDComm {
      * @param senderKeys the key used to sign the 
      * @returns a compact JWS
      */
-    public async pack_nonrepudiable_msg_for_anyone(msg: string, senderKeys: sodium.KeyPair) : Promise<string> {
+    public async pack_nonrepudiable_msg_for_anyone(msg: string, senderKeys: nacl.SignKeyPair) : Promise<string> {
         return this.signContent(msg, senderKeys);
     }
 
@@ -100,10 +93,8 @@ export class DIDComm {
      * @param encMsg message to be decrypted
      * @param toKeys key pair of party decrypting the message
      */
-    public async unpackMessage(packedMsg: string, toKeys: sodium.KeyPair): Promise<IUnpackedMsg> {
-        try {
-            return await this.unpackEncrypted(packedMsg, toKeys)
-        } catch (err) {
+    public async unpackMessage(packedMsg: string, toKeys: nacl.SignKeyPair): Promise<IUnpackedMsg> {
+        if (packedMsg.match(JWS_REGEX)) {
             let jws_checked = this.verifyContent(packedMsg)
             return {
                 message: jws_checked.content,
@@ -111,6 +102,8 @@ export class DIDComm {
                 senderKey: jws_checked.verkey,
                 nonRepudiableVerification: jws_checked.verified
             }
+        } else {
+            return await this.unpackEncrypted(packedMsg, toKeys)
         }
     }
 
@@ -122,33 +115,26 @@ export class DIDComm {
      * @param fromKeys keypair of person encrypting message
      */
     private async packMessage(
-        msg: string, recipientKeys: Uint8Array[], fromKeys: sodium.KeyPair | null = null): Promise<string> {
+        msg: string, recipientKeys: Uint8Array[], fromKeys: nacl.SignKeyPair | null = null): Promise<string> {
 
-        let [recipsJson, cek] = this.prepareRecipientKeys(recipientKeys, fromKeys)
-        let recipsB64 = this.b64url(recipsJson)
+        let {data, cek} = this.prepareRecipientKeys(recipientKeys, fromKeys)
+        let recipsB64 = this.b64url(data)
 
-        let [ciphertext, tag, iv] = this.encryptPlaintext(msg, recipsB64, cek)
+        let [ciphertext, iv] = this.encryptPlaintext(naclutil.decodeUTF8(msg), cek)
 
         return JSON.stringify({
             ciphertext: this.b64url(ciphertext),
             iv: this.b64url(iv),
-            protected: recipsB64,
-            tag: this.b64url(tag),
+            protected: recipsB64
         })
     }
 
-    private async unpackEncrypted(encMsg: string, toKeys: sodium.KeyPair): Promise<IUnpackedMsg> {
+    private async unpackEncrypted(encMsg: string, toKeys: nacl.SignKeyPair): Promise<IUnpackedMsg> {
         let wrapper
         if (typeof encMsg === 'string') {
             wrapper = JSON.parse(encMsg)
         } else {
             wrapper = encMsg
-        }
-        if (typeof toKeys.publicKey === 'string') {
-            toKeys.publicKey = Base58.decode(toKeys.publicKey)
-        }
-        if (typeof toKeys.privateKey === 'string') {
-            toKeys.privateKey = Base58.decode(toKeys.privateKey)
         }
         let recipsJson = this.strB64dec(wrapper.protected)
         let recipsOuter = JSON.parse(recipsJson)
@@ -164,18 +150,18 @@ export class DIDComm {
         }
         let ciphertext = this.b64dec(wrapper.ciphertext)
         let nonce = this.b64dec(wrapper.iv)
-        let tag = this.b64dec(wrapper.tag)
 
-        let message = this.decryptPlaintext(ciphertext, tag, wrapper.protected, nonce, cek)
-        try {
+        let message = this.decryptPlaintext(ciphertext, nonce, cek)
+        if (message.match(JWS_REGEX)) {
             let jws_verified = this.verifyContent(message)
+            const senderKey = Base58.encode(senderVk)
             return {
                 message: jws_verified.content,
                 recipientKey: recipVk,
-                senderKey: senderVk,
-                nonRepudiableVerification: senderVk === jws_verified.verkey ? true : false
+                senderKey,
+                nonRepudiableVerification: senderKey === jws_verified.verkey ? true : false
             }
-        } catch (err) {
+        } else {
             return {
                 message,
                 recipientKey: recipVk,
@@ -185,7 +171,7 @@ export class DIDComm {
         }
     }
 
-    private async signContent(msg: string, SignerKeyPair: sodium.KeyPair) : Promise<string> {
+    private async signContent(msg: string, SignerKeyPair: nacl.SignKeyPair) : Promise<string> {
         // get public key base58 encoded
         let senderVk = Base58.encode(SignerKeyPair.publicKey)
 
@@ -200,76 +186,87 @@ export class DIDComm {
         let header_and_payload_concat = `${b64_jose_str}.${b64_payload}`;
 
         //sign data and return compact JWS
-        let signature = this.b64url(sodium.crypto_sign(header_and_payload_concat, SignerKeyPair.privateKey));
+        let signature = this.b64url(nacl.sign(naclutil.decodeUTF8(header_and_payload_concat), SignerKeyPair.secretKey));
         return `${header_and_payload_concat}.${signature}`;
     }
 
-    private verifyContent(jws: string) : JWSUnpacked {
-        let jws_split = jws.split('.');
-        let jose_header = JSON.parse(this.strB64dec(jws_split[0]));
+    private verifyContent(jws: string): JWSUnpacked {        
+        let jws_parts = jws.match(JWS_REGEX);
+        if (!jws_parts) throw new Error('Not a valid JWS')
+        let jose_header = JSON.parse(this.strB64dec(jws_parts[1]));
         if (jose_header.alg != 'EdDSA') {
             throw "Cryptographic algorithm unidentifiable"
         };
-        let sig_msg = sodium.crypto_sign_open(this.b64dec(jws_split[2]), Base58.decode(jose_header.kid));
+        let sig_msg = nacl.sign.open(this.b64dec(jws_parts[3]), Base58.decode(jose_header.kid));
 
         return {
-            content: this.strB64dec(jws_split[1]),
+            content: this.strB64dec(jws_parts[2]),
             verkey: jose_header.kid,
-            verified: (sodium.to_string(sig_msg) === `${jws_split[0]}.${jws_split[1]}`) ? true : false
+            verified: sig_msg && (naclutil.encodeUTF8(sig_msg) === `${jws_parts[1]}.${jws_parts[2]}`) ? true : false
         };
     }
-
-    private b64url(input: any) {
-        return this.sodium.to_base64(input, this.sodium.base64_variants.URLSAFE)
+  
+    private padB64url(base64url: string): string {
+        switch (base64url.length % 4) {
+        case 0: return base64url
+        case 2: return base64url + '=='
+        case 3: return base64url + '='
+        default: throw new Error('Invalid base64url encoded string')
+        }
+    }
+    
+    private b64url(input: Uint8Array | string) {
+        return naclutil.encodeBase64(input instanceof Uint8Array ? input : naclutil.decodeUTF8(input)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
     }
 
-    private b64dec(input: any) {
-        return this.sodium.from_base64(input, this.sodium.base64_variants.URLSAFE)
+    private b64dec(input: string): Uint8Array {
+        return naclutil.decodeBase64(this.padB64url(input).replace(/-/g, '+').replace(/_/g, '/'))
     }
 
-    private strB64dec(input: any) {
-        return this.sodium.to_string(this.sodium.from_base64(input, this.sodium.base64_variants.URLSAFE))
+    private strB64dec(input: string) : string {
+        return naclutil.encodeUTF8(this.b64dec(input))
     }
 
-    private encryptPlaintext(message: any, addData: any, key: any) {
-        let iv = this.sodium.randombytes_buf(this.sodium.crypto_aead_chacha20poly1305_ietf_NPUBBYTES)
-        let out = this.sodium.crypto_aead_chacha20poly1305_ietf_encrypt_detached(message, addData, null, iv, key)
-        return [out.ciphertext, out.mac, iv]
+    private encryptPlaintext(message: Uint8Array, key: Uint8Array) {
+        let iv = nacl.randomBytes(nacl.secretbox.nonceLength)
+        let ciphertext = nacl.secretbox(message, iv, key)
+        return [ciphertext, iv]
     }
 
-    private decryptPlaintext(ciphertext: any, mac: any, recipsBin: any, nonce: any, key: any) {
-        return this.sodium.to_string(
-            this.sodium.crypto_aead_chacha20poly1305_ietf_decrypt_detached(
-                null, // nsec
-                ciphertext,
-                mac,
-                recipsBin, // ad
-                nonce, // npub
-                key,
-            ),
+    private decryptPlaintext(ciphertext: Uint8Array, nonce: Uint8Array, key: Uint8Array) {
+        const plaintext = nacl.secretbox.open(
+            ciphertext,
+            nonce, // npub
+            key,
         )
+        if (!plaintext) throw new Error('Failure Decrypting Plaintext')
+        return naclutil.encodeUTF8(plaintext)
     }
 
-    private prepareRecipientKeys(toKeys: any, fromKeys: any = null) {
-        let cek = this.sodium.crypto_aead_chacha20poly1305_ietf_keygen()
+    private prepareRecipientKeys(toKeys: Uint8Array[], fromKeys: nacl.SignKeyPair|null = null) {
+        const cek = nacl.randomBytes(nacl.secretbox.keyLength)
         let recips: any[] = []
+        let senderVk: Uint8Array | undefined
+        let senderKp: nacl.BoxKeyPair | undefined
 
-        toKeys.forEach((targetVk: any) => {
+        if (fromKeys) {
+            senderVk = fromKeys.publicKey
+            senderKp = convertKeyPair(fromKeys)
+        }
+        toKeys.forEach((targetVk: Uint8Array) => {
             let encCek = null
             let encSender = null
             let nonce = null
 
-            let targetPk = this.sodium.crypto_sign_ed25519_pk_to_curve25519(targetVk)
+            let targetPk = convertPublicKey(targetVk)
 
-            if (fromKeys) {
-                let senderVk = Base58.encode(fromKeys.publicKey)
-                let senderSk = this.sodium.crypto_sign_ed25519_sk_to_curve25519(fromKeys.privateKey)
-                encSender = this.sodium.crypto_box_seal(senderVk, targetPk)
+            if (senderVk && senderKp) {
+                encSender = sealedbox.seal(senderVk, targetPk)
 
-                nonce = this.sodium.randombytes_buf(this.sodium.crypto_box_NONCEBYTES)
-                encCek = this.sodium.crypto_box_easy(cek, nonce, targetPk, senderSk)
+                nonce = nacl.randomBytes(nacl.box.nonceLength)
+                encCek = nacl.box(cek, nonce, targetPk, senderKp.secretKey)
             } else {
-                encCek = this.sodium.crypto_box_seal(cek, targetPk)
+                encCek = sealedbox.seal(cek, targetPk)
             }
 
             recips.push(
@@ -286,43 +283,38 @@ export class DIDComm {
 
         let data = {
             alg: fromKeys ? 'Authcrypt' : 'Anoncrypt',
-            enc: 'chacha20poly1305_ietf',
+            enc: 'xsalsa20-poly1305',
             recipients: recips,
             typ: 'JWM/1.0',
         }
-        return [JSON.stringify(data), cek]
+        return { data: JSON.stringify(data), cek }
     }
 
-    private locateRecKey(recipients: any, keys: any) {
-        let notFound = []
+    private locateRecKey(recipients: any, keys: nacl.SignKeyPair) {
+        let kp = convertKeyPair(keys)
+        let myPk = Base58.encode(keys.publicKey)
         /* tslint:disable */
-        for (let index in recipients) {
-            let recip = recipients[index]
+        for (let recip of recipients) {
             if (!('header' in recip) || !('encrypted_key' in recip)) {
                 throw new Error('Invalid recipient header')
             }
 
-            let recipVk = Base58.decode(recip.header.kid)
-            if (!this.sodium.memcmp(recipVk, keys.publicKey)) {
-                notFound.push(recip.header.kid)
-            }
-            let pk = this.sodium.crypto_sign_ed25519_pk_to_curve25519(keys.publicKey)
-            let sk = this.sodium.crypto_sign_ed25519_sk_to_curve25519(keys.privateKey)
+            if (recip.header.kid === myPk) {
+                let encryptedKey = this.b64dec(recip.encrypted_key)
+                let nonce = recip.header.iv ? this.b64dec(recip.header.iv) : null
+                let encSender = recip.header.sender ? this.b64dec(recip.header.sender) : null
 
-            let encrytpedKey = this.b64dec(recip.encrypted_key)
-            let nonce = recip.header.iv ? this.b64dec(recip.header.iv) : null
-            let encSender = recip.header.sender ? this.b64dec(recip.header.sender) : null
-
-            let senderVk = null
-            let cek = null
-            if (nonce && encSender) {
-                senderVk = this.sodium.to_string(this.sodium.crypto_box_seal_open(encSender, pk, sk))
-                let senderPk = this.sodium.crypto_sign_ed25519_pk_to_curve25519(Base58.decode(senderVk))
-                cek = this.sodium.crypto_box_open_easy(encrytpedKey, nonce, senderPk, sk)
-            } else {
-                cek = this.sodium.crypto_box_seal_open(encrytpedKey, pk, sk)
+                let senderVk = null
+                let cek = null
+                if (nonce && encSender) {
+                    senderVk = sealedbox.open(encSender, kp.publicKey, kp.secretKey)
+                    let senderPk = convertPublicKey(senderVk)
+                    cek = nacl.box.open(encryptedKey, nonce, senderPk, kp.secretKey)
+                } else {
+                    cek = sealedbox.open(encryptedKey, kp.publicKey, kp.secretKey)
+                }
+                return [cek, senderVk, recip.header.kid]
             }
-            return [cek, senderVk, recip.header.kid]
         }
 
         throw new Error('No corresponding recipient key found in recipients')
