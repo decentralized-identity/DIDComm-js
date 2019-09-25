@@ -20,7 +20,6 @@
   "dependencies": {
     "@types/libsodium-wrappers": "^0.7.5",
     "base-58": "0.0.1",
-    "libsodium": "^0.7.3",
     "libsodium-wrappers": "^0.7.3"
   },
   "main": "lib/index.js",
@@ -35,13 +34,13 @@
     "version": "git add -A src"
   },
   "devDependencies": {
-    "@types/jest": "^23.3.14",
-    "jest": "^24.8.0",
-    "ts-jest": "^23.10.4",
-    "tslint": "^5.11.0",
-    "tslint-config-prettier": "^1.16.0",
-    "typescript": "^3.1.6",
-    "webpack": "^4.36.1",
-    "webpack-cli": "^3.3.6"
+    "@types/jest": "^24.0.18",
+    "jest": "^24.9.0",
+    "ts-jest": "^24.1.0",
+    "tslint": "^5.20.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.6.3",
+    "webpack": "^4.41.0",
+    "webpack-cli": "^3.3.9"
   }
 }
