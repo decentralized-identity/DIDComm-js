@@ -20,12 +20,15 @@
   "dependencies": {
     "@types/libsodium-wrappers": "^0.7.5",
     "base-58": "0.0.1",
-    "libsodium-wrappers": "^0.7.3"
+    "libsodium-wrappers": "^0.7.5"
   },
-  "main": "lib/index.js",
+  "main": "lib/index.umd.js",
+  "module": "lib/index.modern.js",
   "types": "lib/index.d.ts",
+  "source": "src/index.ts",
   "scripts": {
-    "build": "tsc",
+    "build:js": "./node_modules/.bin/microbundle -f modern,umd",
+    "build": "npm run build:js && npm run test",
     "lint": "tslint -p tsconfig.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
@@ -36,6 +39,7 @@
   "devDependencies": {
     "@types/jest": "^24.0.18",
     "jest": "^24.9.0",
+    "microbundle": "^0.12.0-next.6",
     "ts-jest": "^24.1.0",
     "tslint": "^5.20.0",
     "tslint-config-prettier": "^1.18.0",

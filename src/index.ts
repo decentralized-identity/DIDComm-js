@@ -1,5 +1,5 @@
-import Base58 = require('base-58')
-import sodium = require('libsodium-wrappers')
+import * as Base58 from 'base-58'
+import sodium from 'libsodium-wrappers'
 
 interface IUnpackedMsg {
     message: string,
