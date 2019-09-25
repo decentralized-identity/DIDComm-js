@@ -50,6 +50,7 @@ export class DIDComm {
         return this.sodium.crypto_sign_keypair()
     }
 
+
     /**
      * Used to encrypt or encrypt and sign a message for one or many recipients so the recipients can authenticate the 
      * sender in both repudiable and non repudiable formats. By default messages should use repudiable authentication.
@@ -219,11 +220,11 @@ export class DIDComm {
         };
     }
 
-    private b64url(input: any) {
+    b64url(input: any) {
         return this.sodium.to_base64(input, this.sodium.base64_variants.URLSAFE)
     }
 
-    private b64dec(input: any) {
+    b64dec(input: any) {
         return this.sodium.from_base64(input, this.sodium.base64_variants.URLSAFE)
     }
 
