@@ -1,5 +1,5 @@
-import Base58 = require('base-58')
-import sodium = require('libsodium-wrappers')
+import * as Base58 from 'base-58'
+import sodium from 'libsodium-wrappers'
 
 interface IUnpackedMsg {
     message: string,
@@ -50,6 +50,7 @@ export class DIDComm {
         return this.sodium.crypto_sign_keypair()
     }
 
+
     /**
      * Used to encrypt or encrypt and sign a message for one or many recipients so the recipients can authenticate the 
      * sender in both repudiable and non repudiable formats. By default messages should use repudiable authentication.
@@ -62,7 +63,7 @@ export class DIDComm {
      *          if nonRepudiable == false returns the msg encrypted as follows JWE(msg)
      */
     public async pack_auth_msg_for_recipients(
-        msg: string, recipientKeys: Uint8Array[], senderKeys: sodium.KeyPair, nonRepudiable: Boolean = false) : Promise<string> {
+        msg: string, recipientKeys: Uint8Array[], senderKeys: sodium.KeyPair, nonRepudiable: Boolean = false): Promise<string> {
         if (nonRepudiable) {
             //return JWE(JWS(msg))
             let signedMsg = await this.signContent(msg, senderKeys);
@@ -70,7 +71,7 @@ export class DIDComm {
         } else {
             // return (JWE(msg))
             return this.packMessage(msg, recipientKeys, senderKeys);
-            
+
         }
     }
 
@@ -80,7 +81,7 @@ export class DIDComm {
      * @param recipientKeys a list of the recipients keys
      * @returns a JWE with an ephemeral sender key
      */
-    public async pack_anon_msg_for_recipients(msg: string, recipientKeys: Uint8Array[]) : Promise<string> {
+    public async pack_anon_msg_for_recipients(msg: string, recipientKeys: Uint8Array[]): Promise<string> {
         return this.packMessage(msg, recipientKeys, null)
     }
 
@@ -91,7 +92,7 @@ export class DIDComm {
      * @param senderKeys the key used to sign the 
      * @returns a compact JWS
      */
-    public async pack_nonrepudiable_msg_for_anyone(msg: string, senderKeys: sodium.KeyPair) : Promise<string> {
+    public async pack_nonrepudiable_msg_for_anyone(msg: string, senderKeys: sodium.KeyPair): Promise<string> {
         return this.signContent(msg, senderKeys);
     }
 
@@ -185,7 +186,7 @@ export class DIDComm {
         }
     }
 
-    private async signContent(msg: string, SignerKeyPair: sodium.KeyPair) : Promise<string> {
+    private async signContent(msg: string, SignerKeyPair: sodium.KeyPair): Promise<string> {
         // get public key base58 encoded
         let senderVk = Base58.encode(SignerKeyPair.publicKey)
 
@@ -204,7 +205,7 @@ export class DIDComm {
         return `${header_and_payload_concat}.${signature}`;
     }
 
-    private verifyContent(jws: string) : JWSUnpacked {
+    private verifyContent(jws: string): JWSUnpacked {
         let jws_split = jws.split('.');
         let jose_header = JSON.parse(this.strB64dec(jws_split[0]));
         if (jose_header.alg != 'EdDSA') {
@@ -219,11 +220,11 @@ export class DIDComm {
         };
     }
 
-    private b64url(input: any) {
+    b64url(input: any) {
         return this.sodium.to_base64(input, this.sodium.base64_variants.URLSAFE)
     }
 
-    private b64dec(input: any) {
+    b64dec(input: any) {
         return this.sodium.from_base64(input, this.sodium.base64_variants.URLSAFE)
     }
 
