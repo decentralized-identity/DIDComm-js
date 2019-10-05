@@ -5,7 +5,8 @@
       "semicolon": [true, "never"],
       "quotemark": [true, "single", "avoid-escape", "avoid-template"],
       "no-string-literal": false,
-      "no-console": false
+      "no-console": false,
+      "variable-name": true
    },
    "linterOptions": {
       "exclude": ["node_modules"]

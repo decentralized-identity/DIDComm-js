@@ -5,16 +5,16 @@ describe('pack and unpack', () => {
 
     it('is an async constructor', async () => {
         const didcomm = new DIDComm()
-        const unresolvedVal = didcomm.Ready
+        const unresolvedVal = didcomm.ready
         expect(unresolvedVal).toBeInstanceOf(Promise)
-        const val = await didcomm.Ready
+        const val = await didcomm.ready
         expect(val).toEqual(undefined)
     })
 
     it('it packs and unpacks a message with repudiable authentication', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
+        await didcomm.ready
         const alice = await didcomm.generateKeyPair()
         const bob = await didcomm.generateKeyPair()
         const message = 'I AM A PRIVATE MESSAGE'
@@ -27,7 +27,7 @@ describe('pack and unpack', () => {
     it('it unpacks an existing message with repudiable authentication', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
+        await didcomm.ready
         const bob: sodium.KeyPair = {
             publicKey: didcomm.b64dec('huhCS7nknreumNZyDM5x565PQmt7QGuaoqzVlqyYHJ8='),
             privateKey: didcomm.b64dec('4hUOfejoCMv2Pjy1z_MzftFYgCwINh3rgwoRK_iFu1KG6EJLueSet66Y1nIMznHnrk9Ca3tAa5qirNWWrJgcnw=='),
@@ -43,7 +43,7 @@ describe('pack and unpack', () => {
     it('it packs and unpacks a message with nonrepudiable authentication', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
+        await didcomm.ready
         const alice = await didcomm.generateKeyPair()
         const bob = await didcomm.generateKeyPair()
         const message = 'I AM A PRIVATE MESSAGE'
@@ -57,7 +57,7 @@ describe('pack and unpack', () => {
     it('it unpacks an existing message with nonrepudiable authentication', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
+        await didcomm.ready
         const bob: sodium.KeyPair = {
             publicKey: didcomm.b64dec('huhCS7nknreumNZyDM5x565PQmt7QGuaoqzVlqyYHJ8='),
             privateKey: didcomm.b64dec('4hUOfejoCMv2Pjy1z_MzftFYgCwINh3rgwoRK_iFu1KG6EJLueSet66Y1nIMznHnrk9Ca3tAa5qirNWWrJgcnw=='),
@@ -75,7 +75,7 @@ describe('pack and unpack', () => {
     it('it checks that a packed message with alg still gets unpacked properly', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
+        await didcomm.ready
         const alice = await didcomm.generateKeyPair()
         const bob = await didcomm.generateKeyPair()
         const message = JSON.stringify({
@@ -92,7 +92,7 @@ describe('pack and unpack', () => {
     it('it checks that an anonymous packed message can be unpacked', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
+        await didcomm.ready
         const bob = await didcomm.generateKeyPair()
         const message = JSON.stringify({
             "@type": "did:example:1234567890;spec/test",
@@ -108,7 +108,7 @@ describe('pack and unpack', () => {
     it('it checks that an anonymous packed message can be unpacked', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
-        await didcomm.Ready
+        await didcomm.ready
         const bob = await didcomm.generateKeyPair()
         const message = "I AM A PUBLIC MESSAGE"
 
