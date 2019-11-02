@@ -16,7 +16,7 @@ interface JWSUnpacked {
 
 export class DIDComm {
 
-    public readonly Ready: Promise<undefined>
+    public readonly ready: Promise<undefined>
     private sodium: any
 
     /**
@@ -31,7 +31,7 @@ export class DIDComm {
      * }())
      */
     constructor() {
-        this.Ready = new Promise(async (res, rej) => {
+        this.ready = new Promise(async (res, rej) => {
             try {
                 await sodium.ready
                 this.sodium = sodium
@@ -105,12 +105,12 @@ export class DIDComm {
         try {
             return await this.unpackEncrypted(packedMsg, toKeys)
         } catch (err) {
-            let jws_checked = this.verifyContent(packedMsg)
+            let jwsChecked = this.verifyContent(packedMsg)
             return {
-                message: jws_checked.content,
+                message: jwsChecked.content,
                 recipientKey: null,
-                senderKey: jws_checked.verkey,
-                nonRepudiableVerification: jws_checked.verified
+                senderKey: jwsChecked.verkey,
+                nonRepudiableVerification: jwsChecked.verified
             }
         }
     }
@@ -169,12 +169,12 @@ export class DIDComm {
 
         let message = this.decryptPlaintext(ciphertext, tag, wrapper.protected, nonce, cek)
         try {
-            let jws_verified = this.verifyContent(message)
+            let jwsVerified = this.verifyContent(message)
             return {
-                message: jws_verified.content,
+                message: jwsVerified.content,
                 recipientKey: recipVk,
                 senderKey: senderVk,
-                nonRepudiableVerification: senderVk === jws_verified.verkey ? true : false
+                nonRepudiableVerification: senderVk === jwsVerified.verkey ? true : false
             }
         } catch (err) {
             return {
@@ -186,37 +186,37 @@ export class DIDComm {
         }
     }
 
-    private async signContent(msg: string, SignerKeyPair: sodium.KeyPair): Promise<string> {
+    private async signContent(msg: string, signerKeyPair: sodium.KeyPair): Promise<string> {
         // get public key base58 encoded
-        let senderVk = Base58.encode(SignerKeyPair.publicKey)
+        let senderVk = Base58.encode(signerKeyPair.publicKey)
 
         // generate jose header, b64url encode it, and concat to b64url encoded payload
-        let jose_header = {
+        let joseHeader = {
             alg: 'EdDSA',
             kid: senderVk
         }
-        let jose_string = JSON.stringify(jose_header);
-        let b64_jose_str = this.b64url(jose_string);
-        let b64_payload = this.b64url(msg);
-        let header_and_payload_concat = `${b64_jose_str}.${b64_payload}`;
+        let joseString = JSON.stringify(joseHeader);
+        let b64JoseStr = this.b64url(joseString);
+        let b64Payload = this.b64url(msg);
+        let headerAndPayloadConcat = `${b64JoseStr}.${b64Payload}`;
 
         //sign data and return compact JWS
-        let signature = this.b64url(sodium.crypto_sign(header_and_payload_concat, SignerKeyPair.privateKey));
-        return `${header_and_payload_concat}.${signature}`;
+        let signature = this.b64url(sodium.crypto_sign(headerAndPayloadConcat, signerKeyPair.privateKey));
+        return `${headerAndPayloadConcat}.${signature}`;
     }
 
     private verifyContent(jws: string): JWSUnpacked {
-        let jws_split = jws.split('.');
-        let jose_header = JSON.parse(this.strB64dec(jws_split[0]));
-        if (jose_header.alg != 'EdDSA') {
+        let jwsSplit = jws.split('.');
+        let joseHeader = JSON.parse(this.strB64dec(jwsSplit[0]));
+        if (joseHeader.alg != 'EdDSA') {
             throw "Cryptographic algorithm unidentifiable"
         };
-        let sig_msg = sodium.crypto_sign_open(this.b64dec(jws_split[2]), Base58.decode(jose_header.kid));
+        let sigMsg = sodium.crypto_sign_open(this.b64dec(jwsSplit[2]), Base58.decode(joseHeader.kid));
 
         return {
-            content: this.strB64dec(jws_split[1]),
-            verkey: jose_header.kid,
-            verified: (sodium.to_string(sig_msg) === `${jws_split[0]}.${jws_split[1]}`) ? true : false
+            content: this.strB64dec(jwsSplit[1]),
+            verkey: joseHeader.kid,
+            verified: (sodium.to_string(sigMsg) === `${jwsSplit[0]}.${jwsSplit[1]}`) ? true : false
         };
     }
 
