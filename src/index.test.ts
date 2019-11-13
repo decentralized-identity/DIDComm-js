@@ -1,4 +1,4 @@
-import { DIDComm } from '.'
+import { DIDComm } from './index'
 import sodium from 'libsodium-wrappers'
 
 describe('pack and unpack', () => {
