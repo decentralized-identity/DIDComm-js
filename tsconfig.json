@@ -3,6 +3,7 @@
     "lib": ["dom", "es6","es2015.promise"],
     "target": "ES2015",
     "module": "es2015",
+    "moduleResolution": "node",
     "outDir": "./lib",
     "declaration": true,
     "strict": true,
