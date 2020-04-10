@@ -29,12 +29,12 @@ describe('pack and unpack', () => {
         const didcomm = new DIDComm()
         await didcomm.ready
         const bob: sodium.KeyPair = {
-            publicKey: didcomm.b64dec('huhCS7nknreumNZyDM5x565PQmt7QGuaoqzVlqyYHJ8='),
-            privateKey: didcomm.b64dec('4hUOfejoCMv2Pjy1z_MzftFYgCwINh3rgwoRK_iFu1KG6EJLueSet66Y1nIMznHnrk9Ca3tAa5qirNWWrJgcnw=='),
+            publicKey: didcomm.b64dec('IpK_QxqypK8uaaXdEzj7qj5e7QAwdicAoWfC_yip2xM'),
+            privateKey: didcomm.b64dec('oQpOmUOpCce9pnJb13I-RYG1m_1VLm3tvJq3R2P7KhAikr9DGrKkry5ppd0TOPuqPl7tADB2JwChZ8L_KKnbEw'),
             keyType: 'ed25519'
         }
         const message = 'I AM A PRIVATE MESSAGE'
-        const packedMsg = '{"ciphertext": "nG5VtCGpojKCjjegyi03O4SieBtN6w==","iv": "CG_v-eia5tYKJAdo", "protected": "eyJhbGciOiJBdXRoY3J5cHQiLCJlbmMiOiJjaGFjaGEyMHBvbHkxMzA1X2lldGYiLCJyZWNpcGllbnRzIjpbeyJlbmNyeXB0ZWRfa2V5IjoiMDFrWTQ1cEVYYUhMdU10ZTlhRTZtYUhtMDFRMU5Sam5MQUVpU3FoNmhZS2FvUWMyZEgwbzRsMzZEOXFzbGFoaiIsImhlYWRlciI6eyJpdiI6IlNDY095WGV2b0hXVXA2ZXFWZmJnamZuR3lNS0RoMGszIiwia2lkIjoiQTVkM1R6eGJwbUxBNTRNU2E4MmppUFhqM1JUeHN0dTZxZjdzc0x4UXlBQTIiLCJzZW5kZXIiOiI1NG5FLTF0YmpZdUZKa1BCWGNtbjdZUXN3Q19jREdmQlIyOXV4Q1RKdVZXbWJZX2UyYk0zNE9HbFBQWGN6aHFRZzIySWwwWVB5MW9uRGR0ei0tMHNNN2dKS1FfMkZMRlJFcW05cmZkOFIwWTdxUnVCTWJxOHR5cmdjOWs9In19XSwidHlwIjoiSldNLzEuMCJ9","tag": "ZESRpQjSJ6J9zljNS_a3iw=="}'
+        const packedMsg = '{"ciphertext":"IM-OK82xvazYlHMPw8bjvlMd-0iLBUi3silUnFTDmARv90oUp8tySou_PmQEpjK4rTAeAfvta6kSPTC_M3ORnqhmanioCNYrkFxTNLVUv7GLrSj8kQ0ENudxxIMPfMEUoUAgQm4EdeESBIM1UoP6V5ys3KdA5sH1P3HCp7wlS29MNRgNKla2vx6rC3JreLI40qj7L0LTjnnzq1_RNjEvWJyfRx6a6DWGiJ5GY9WExozOGmRi-5gc1hItQKGypvCCGOR3NLEr1KUHn5Vr0CxJ3V3C1momtJSYpjPxNLgXH-1E7yaNTDnCBZ0Oecr9LS5j-HxQB4aDcrYQ3UHY2C5KaJQYpPLgbtrYNHUuRH_7RqzTq3CMAPkak5_ZvNplOOjFFxorzC_ZwNMP64njhpk-a6CV1hN4jbeFwI96RU93jMbFqY96Flmj_d4cih-ptL9ub4DUOiQ5qX7bczJZjaNhPadqPeKFG3Kin36BPihjzfkaBTw","iv":"3NZtBtHQ8cLS6a1v","protected":"eyJhbGciOiJBdXRoY3J5cHQiLCJlbmMiOiJjaGFjaGEyMHBvbHkxMzA1X2lldGYiLCJyZWNpcGllbnRzIjpbeyJlbmNyeXB0ZWRfa2V5IjoicVpWU3BmTHlnQWMybzlfZVpKTmZVWnI4UTE2Ty02NzVJbE5KYXR1MXJQVWFJeE1Xa2gwbXJhWklCcGF5UW1aNCIsImhlYWRlciI6eyJpdiI6IlFEWkM0Y1R5UGh3cHozeFl3QTAwcDVpcFRxU19qZnFPIiwia2lkIjoiM0t4ZVNyeEFMM05Ga0ZXenlXb2hvemtlUTZjZGVDRmJOZkFBQk44bWN6UTIiLCJzZW5kZXIiOiJnbmJNV3RDYnFMblRHNGZNdllxRmJKeV9wRUxyYlZUSjBla0EyWmVLbGstR2lEQnp4Sjc1X240bUtteXpDQ1NfTTIxM1gyRzN3RnFEbTVSRVJaakdTbmFlMl9tYk1sRHN4X1V2cjBLX2FISHpUM0FHU2Y5XzNVbFZOUFkifX1dLCJ0eXAiOiJKV00vMS4wIn0","tag":"tfkymuUHGyEl-2IuVnG3AQ"}'
         const unpackedMsg = await didcomm.unpackMessage(packedMsg, bob)
         expect(unpackedMsg.message).toEqual(message)
     })
@@ -59,13 +59,13 @@ describe('pack and unpack', () => {
         const didcomm = new DIDComm()
         await didcomm.ready
         const bob: sodium.KeyPair = {
-            publicKey: didcomm.b64dec('huhCS7nknreumNZyDM5x565PQmt7QGuaoqzVlqyYHJ8='),
-            privateKey: didcomm.b64dec('4hUOfejoCMv2Pjy1z_MzftFYgCwINh3rgwoRK_iFu1KG6EJLueSet66Y1nIMznHnrk9Ca3tAa5qirNWWrJgcnw=='),
+            publicKey: didcomm.b64dec('IpK_QxqypK8uaaXdEzj7qj5e7QAwdicAoWfC_yip2xM'),
+            privateKey: didcomm.b64dec('oQpOmUOpCce9pnJb13I-RYG1m_1VLm3tvJq3R2P7KhAikr9DGrKkry5ppd0TOPuqPl7tADB2JwChZ8L_KKnbEw'),
             keyType: 'ed25519'
         }
         const message = 'I AM A PRIVATE MESSAGE'
 
-        const packedMsg = '{"ciphertext":"6aP_ua5UKa56F5OyDTxc-RXl0o03xI7fjGhD8coVWMvo7846IoW7P2Ulj07uFNLhaOs2GA3vrpA9eyFIVGMATm1vGndge7FZcM-rpuvRT4EywQGT91VYrNRqxkr_MU8eqAMJjsa6gimmMop-VAlXkNLYH7pnSErSK3cYQNLVEwjEzY6rkBnWQEmoy0CUWlweNqeuNl8bi5hqSdKTvs2BrG2EC3eWuti8yZRdEto4xU62AVtF_aVd_6OjebfASWHKP_uWXeDPl4yXcf8SNlUdROpQGBoK1mVKtREkKCImI53yxQxhOIhHxpCeKIi8IH4jx0AyEa--_2Cnj2g5rinVQiZicNypyBQCZMTsXwjsSMOFO0K8c5lzCZrMno-W9AktyVI81Up6AMaXkM3NpFqKQhTM4eOw4W-NoOzOybMTba3qfgbb0GQ-muUQbUNjcnf_T8vMbZNjb2LlWVaK0zQ_ZOo9lrr0EuQUdWBxZr4j81qslfq-lZyw6YTR","iv":"Jhazdl_wAFhFePuI","protected":"eyJhbGciOiJBdXRoY3J5cHQiLCJlbmMiOiJjaGFjaGEyMHBvbHkxMzA1X2lldGYiLCJyZWNpcGllbnRzIjpbeyJlbmNyeXB0ZWRfa2V5IjoidDRWeUwzd0VhQ0NwOUhyZ1JIWHVhVzgtUk41ZFA5ZlJJOWd2UUxURkpYeUJOZlNTS2lPY2VTRnBqd1l6QmlxdiIsImhlYWRlciI6eyJpdiI6Ik9qcDVmWnNsY2pLQ0xjUGUyRk9QUnBCRnU1YVhRTUhUIiwia2lkIjoiQTVkM1R6eGJwbUxBNTRNU2E4MmppUFhqM1JUeHN0dTZxZjdzc0x4UXlBQTIiLCJzZW5kZXIiOiJCSWZzaDVHNE1FRnN4ZTMtN3BaSm9BMHptLTdTb1FSZVVLY2xLdjBPTlRDZ0J4dVQ1aG9lS0dRWEEwMS01YWROWHhEZGNJU2tvcXFONjZzd2JiaGRRYmxVLUFKd2NST3I4NXRweC10T1lmZzB2bVNuTkg4Rm5DdC1UcGs9In19XSwidHlwIjoiSldNLzEuMCJ9","tag":"Lq2CYyWqpzcdCtpS5C1Hvw=="}'
+        const packedMsg = '{"ciphertext":"IM-OK82xvazYlHMPw8bjvlMd-0iLBUi3silUnFTDmARv90oUp8tySou_PmQEpjK4rTAeAfvta6kSPTC_M3ORnqhmanioCNYrkFxTNLVUv7GLrSj8kQ0ENudxxIMPfMEUoUAgQm4EdeESBIM1UoP6V5ys3KdA5sH1P3HCp7wlS29MNRgNKla2vx6rC3JreLI40qj7L0LTjnnzq1_RNjEvWJyfRx6a6DWGiJ5GY9WExozOGmRi-5gc1hItQKGypvCCGOR3NLEr1KUHn5Vr0CxJ3V3C1momtJSYpjPxNLgXH-1E7yaNTDnCBZ0Oecr9LS5j-HxQB4aDcrYQ3UHY2C5KaJQYpPLgbtrYNHUuRH_7RqzTq3CMAPkak5_ZvNplOOjFFxorzC_ZwNMP64njhpk-a6CV1hN4jbeFwI96RU93jMbFqY96Flmj_d4cih-ptL9ub4DUOiQ5qX7bczJZjaNhPadqPeKFG3Kin36BPihjzfkaBTw","iv":"3NZtBtHQ8cLS6a1v","protected":"eyJhbGciOiJBdXRoY3J5cHQiLCJlbmMiOiJjaGFjaGEyMHBvbHkxMzA1X2lldGYiLCJyZWNpcGllbnRzIjpbeyJlbmNyeXB0ZWRfa2V5IjoicVpWU3BmTHlnQWMybzlfZVpKTmZVWnI4UTE2Ty02NzVJbE5KYXR1MXJQVWFJeE1Xa2gwbXJhWklCcGF5UW1aNCIsImhlYWRlciI6eyJpdiI6IlFEWkM0Y1R5UGh3cHozeFl3QTAwcDVpcFRxU19qZnFPIiwia2lkIjoiM0t4ZVNyeEFMM05Ga0ZXenlXb2hvemtlUTZjZGVDRmJOZkFBQk44bWN6UTIiLCJzZW5kZXIiOiJnbmJNV3RDYnFMblRHNGZNdllxRmJKeV9wRUxyYlZUSjBla0EyWmVLbGstR2lEQnp4Sjc1X240bUtteXpDQ1NfTTIxM1gyRzN3RnFEbTVSRVJaakdTbmFlMl9tYk1sRHN4X1V2cjBLX2FISHpUM0FHU2Y5XzNVbFZOUFkifX1dLCJ0eXAiOiJKV00vMS4wIn0","tag":"tfkymuUHGyEl-2IuVnG3AQ"}'
         const unpackedMsg = await didcomm.unpackMessage(packedMsg, bob)
         expect(unpackedMsg.message).toEqual(message)
         expect(unpackedMsg.nonRepudiableVerification).toEqual(true)

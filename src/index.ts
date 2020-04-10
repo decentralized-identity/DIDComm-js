@@ -221,15 +221,15 @@ export class DIDComm {
     }
 
     b64url(input: any) {
-        return this.sodium.to_base64(input, this.sodium.base64_variants.URLSAFE)
+        return this.sodium.to_base64(input, this.sodium.base64_variants.URLSAFE_NO_PADDING)
     }
 
     b64dec(input: any) {
-        return this.sodium.from_base64(input, this.sodium.base64_variants.URLSAFE)
+        return this.sodium.from_base64(input, this.sodium.base64_variants.URLSAFE_NO_PADDING)
     }
 
     private strB64dec(input: any) {
-        return this.sodium.to_string(this.sodium.from_base64(input, this.sodium.base64_variants.URLSAFE))
+        return this.sodium.to_string(this.sodium.from_base64(input, this.sodium.base64_variants.URLSAFE_NO_PADDING))
     }
 
     private encryptPlaintext(message: any, addData: any, key: any) {
