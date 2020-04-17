@@ -1,5 +1,5 @@
-import { DIDComm } from './index'
 import sodium from 'libsodium-wrappers'
+import { DIDComm } from './index'
 
 describe('pack and unpack', () => {
 
@@ -29,16 +29,15 @@ describe('pack and unpack', () => {
         const didcomm = new DIDComm()
         await didcomm.ready
         const bob: sodium.KeyPair = {
-            publicKey: didcomm.b64dec('huhCS7nknreumNZyDM5x565PQmt7QGuaoqzVlqyYHJ8='),
+            keyType: 'ed25519',
             privateKey: didcomm.b64dec('4hUOfejoCMv2Pjy1z_MzftFYgCwINh3rgwoRK_iFu1KG6EJLueSet66Y1nIMznHnrk9Ca3tAa5qirNWWrJgcnw=='),
-            keyType: 'ed25519'
+            publicKey: didcomm.b64dec('huhCS7nknreumNZyDM5x565PQmt7QGuaoqzVlqyYHJ8='),
         }
         const message = 'I AM A PRIVATE MESSAGE'
         const packedMsg = '{"ciphertext": "nG5VtCGpojKCjjegyi03O4SieBtN6w==","iv": "CG_v-eia5tYKJAdo", "protected": "eyJhbGciOiJBdXRoY3J5cHQiLCJlbmMiOiJjaGFjaGEyMHBvbHkxMzA1X2lldGYiLCJyZWNpcGllbnRzIjpbeyJlbmNyeXB0ZWRfa2V5IjoiMDFrWTQ1cEVYYUhMdU10ZTlhRTZtYUhtMDFRMU5Sam5MQUVpU3FoNmhZS2FvUWMyZEgwbzRsMzZEOXFzbGFoaiIsImhlYWRlciI6eyJpdiI6IlNDY095WGV2b0hXVXA2ZXFWZmJnamZuR3lNS0RoMGszIiwia2lkIjoiQTVkM1R6eGJwbUxBNTRNU2E4MmppUFhqM1JUeHN0dTZxZjdzc0x4UXlBQTIiLCJzZW5kZXIiOiI1NG5FLTF0YmpZdUZKa1BCWGNtbjdZUXN3Q19jREdmQlIyOXV4Q1RKdVZXbWJZX2UyYk0zNE9HbFBQWGN6aHFRZzIySWwwWVB5MW9uRGR0ei0tMHNNN2dKS1FfMkZMRlJFcW05cmZkOFIwWTdxUnVCTWJxOHR5cmdjOWs9In19XSwidHlwIjoiSldNLzEuMCJ9","tag": "ZESRpQjSJ6J9zljNS_a3iw=="}'
         const unpackedMsg = await didcomm.unpackMessage(packedMsg, bob)
         expect(unpackedMsg.message).toEqual(message)
     })
-
 
     it('it packs and unpacks a message with nonrepudiable authentication', async () => {
         // Prep test suite
@@ -59,9 +58,9 @@ describe('pack and unpack', () => {
         const didcomm = new DIDComm()
         await didcomm.ready
         const bob: sodium.KeyPair = {
-            publicKey: didcomm.b64dec('huhCS7nknreumNZyDM5x565PQmt7QGuaoqzVlqyYHJ8='),
+            keyType: 'ed25519',
             privateKey: didcomm.b64dec('4hUOfejoCMv2Pjy1z_MzftFYgCwINh3rgwoRK_iFu1KG6EJLueSet66Y1nIMznHnrk9Ca3tAa5qirNWWrJgcnw=='),
-            keyType: 'ed25519'
+            publicKey: didcomm.b64dec('huhCS7nknreumNZyDM5x565PQmt7QGuaoqzVlqyYHJ8='),
         }
         const message = 'I AM A PRIVATE MESSAGE'
 
@@ -71,7 +70,6 @@ describe('pack and unpack', () => {
         expect(unpackedMsg.nonRepudiableVerification).toEqual(true)
     })
 
-
     it('it checks that a packed message with alg still gets unpacked properly', async () => {
         // Prep test suite
         const didcomm = new DIDComm()
@@ -79,9 +77,9 @@ describe('pack and unpack', () => {
         const alice = await didcomm.generateKeyPair()
         const bob = await didcomm.generateKeyPair()
         const message = JSON.stringify({
-            "@type": "did:example:1234567890;spec/test",
-            alg: "edDSA",
-            data: "I AM A SIGNED MESSAGE"
+            '@type': 'did:example:1234567890;spec/test',
+            'alg': 'edDSA',
+            'data': 'I AM A SIGNED MESSAGE',
         })
 
         const packedMsg = await didcomm.pack_auth_msg_for_recipients(message, [bob.publicKey], alice)
@@ -95,9 +93,9 @@ describe('pack and unpack', () => {
         await didcomm.ready
         const bob = await didcomm.generateKeyPair()
         const message = JSON.stringify({
-            "@type": "did:example:1234567890;spec/test",
-            alg: "edDSA",
-            data: "I AM A SIGNED MESSAGE"
+            '@type': 'did:example:1234567890;spec/test',
+            'alg': 'edDSA',
+            'data': 'I AM A SIGNED MESSAGE',
         })
 
         const packedMsg = await didcomm.pack_anon_msg_for_recipients(message, [bob.publicKey])
@@ -110,7 +108,7 @@ describe('pack and unpack', () => {
         const didcomm = new DIDComm()
         await didcomm.ready
         const bob = await didcomm.generateKeyPair()
-        const message = "I AM A PUBLIC MESSAGE"
+        const message = 'I AM A PUBLIC MESSAGE'
 
         const packedMsg = await didcomm.pack_nonrepudiable_msg_for_anyone(message, bob)
         const unpackedMsg = await didcomm.unpackMessage(packedMsg, bob)
