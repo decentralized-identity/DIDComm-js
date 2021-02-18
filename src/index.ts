@@ -16,8 +16,8 @@ interface IJWSUnpacked {
 
 export class DIDComm {
 
-    public readonly ready: Promise<undefined>
-    private sodium: any
+    public readonly ready: Promise<undefined|Error>
+    private sodium = sodium
 
     /**
      * Creates a new PackUnpack object. The returned object contains a .Ready property:
@@ -34,8 +34,7 @@ export class DIDComm {
         this.ready = new Promise(async (res, rej) => {
             try {
                 await sodium.ready
-                this.sodium = sodium
-                res()
+                res(undefined)
             } catch (err) {
                 rej(err)
             }
