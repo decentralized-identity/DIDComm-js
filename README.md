@@ -1,3 +1,6 @@
+# NOTICE
+This repo has been deprecated.  Active work on DID-Comm can be found at [New DID-Comm Repo] (https://github.com/decentralized-identity/didcomm-messaging.git).
+
 # DIDComm-crypto-js
 Javascript (written in typescript) version of the cryptographic envelope of DIDComm. This library is built for any javascript environment that needs to . It is built on libsodium-js and follows the specs documented in the [docs](/docs/README.md) folder.
 
