@@ -1,4 +1,7 @@
-# DIDComm-crypto-js
+# Archived
+This implementation hasn't been actively maintained for quite some time. If you'd like to utilize a current implementation of DIDCommV1 which is actively tracking the AIP1.0 and AIP2.0 standards checkout [aries-framework-javascript](https://github.com/hyperledger/aries-framework-javascript). If you're looking for DIDCommV2 based implementations check out the [implementations listed here](https://github.com/decentralized-identity/didcomm-messaging/#implementations).
+
+# DIDCommV1-crypto-js
 Javascript (written in typescript) version of the cryptographic envelope of DIDComm. This library is built for any javascript environment that needs to . It is built on libsodium-js and follows the specs documented in the [docs](/docs/README.md) folder.
 
 ## installation
